@@ -4,6 +4,8 @@ import re
 from datetime import datetime, timezone
 from typing import Any
 
+import httpx
+
 from app.db import get_db
 from app.services.claude_client import draft_answer
 from app.services.classification import redact_with_llm
@@ -15,10 +17,23 @@ from app.services.slack_client import update_message_with_decision
 GENESIS_HASH = "0" * 64
 
 
-async def _db(fn, *args, **kwargs) -> Any:
+async def _db(fn, *args, attempts: int = 3, **kwargs) -> Any:
     """Runs a blocking supabase-py call off the event loop so one slow
-    query doesn't stall every other job the worker is concurrently running."""
-    return await asyncio.to_thread(fn, *args, **kwargs)
+    query doesn't stall every other job the worker is concurrently running.
+
+    Retries on transport-level failures (e.g. "Server disconnected"): on the
+    free Hugging Face container, a burst of concurrent jobs occasionally
+    drops the connection to Supabase's REST endpoint mid-request. That's
+    transient, not a real failure of the request itself, so it's worth a
+    couple of quick retries before letting the event fail for good.
+    """
+    for attempt in range(attempts):
+        try:
+            return await asyncio.to_thread(fn, *args, **kwargs)
+        except httpx.TransportError:
+            if attempt == attempts - 1:
+                raise
+            await asyncio.sleep(0.3 * (attempt + 1))
 
 
 def _get_or_create_agent(db, workspace_id: str, name: str) -> str:
@@ -76,7 +91,14 @@ async def process_event_intake(ctx, intake_id: str) -> None:
                     "status": payload.get("status", "completed"),
                 }
             )
-            .execute()
+            .execute(),
+            # Never retried: unlike the selects/updates around it, an INSERT
+            # here is not safely repeatable — if "Server disconnected" fires
+            # after Postgres already committed the row but before the response
+            # arrived, a retry would insert a second, duplicate immutable event.
+            # A single lost attempt just fails the event; that's the safe side
+            # to fail on for an append-only audit log.
+            attempts=1,
         )
         event_id = event_row.data[0]["id"]
 
