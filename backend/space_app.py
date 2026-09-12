@@ -17,9 +17,9 @@ Locally you would never run this; use uvicorn + run_worker.py.
 # torch/CUDA (spaCy's backend imports torch when it is installed), or
 # Gradio's reload watcher fails at startup. Not installed elsewhere.
 try:
-    import spaces  # noqa: F401
+    import spaces
 except ImportError:
-    pass
+    spaces = None
 
 import atexit
 import os
@@ -76,12 +76,24 @@ atexit.register(lambda: [p.terminate() for p in _procs])
 
 from app.main import app as api  # noqa: E402  (after REDIS_URL is set)
 
+# ZeroGPU kills a Space that registers no @spaces.GPU function at startup
+# ("No @spaces.GPU function detected during startup"). This backend never
+# needs a GPU, so register a one-second no-op to satisfy the check.
+def _gpu_probe() -> str:
+    return "ok"
+
+if spaces is not None:
+    _gpu_probe = spaces.GPU(duration=1)(_gpu_probe)
+
 with gr.Blocks(title="AuditAgent API") as status:
     gr.Markdown(
         "# AuditAgent API\n"
         "This Space hosts the AuditAgent backend (API + worker).\n\n"
         "Health: [/healthz](healthz) · OpenAPI: [/docs](docs)"
     )
+    _probe_btn = gr.Button("GPU probe", size="sm", visible=False)
+    _probe_out = gr.Textbox(visible=False)
+    _probe_btn.click(_gpu_probe, outputs=_probe_out)
 
 if __name__ == "__main__":
     # ssr_mode=False: Gradio's SSR mode would start a Node front-end on this
