@@ -11,15 +11,32 @@ Locally you would never run this; use uvicorn + run_worker.py.
 
 import atexit
 import os
+import socket
 import subprocess
 import sys
+import time
 from pathlib import Path
 
 import gradio as gr
 import uvicorn
 
 HERE = Path(__file__).resolve().parent
+PORT = int(os.environ.get("PORT", "7860"))
 os.environ.setdefault("REDIS_URL", "redis://127.0.0.1:6379")
+
+
+def _port_in_use(port: int) -> bool:
+    with socket.socket() as s:
+        return s.connect_ex(("127.0.0.1", port)) == 0
+
+
+# Some Space runtimes (ZeroGPU) execute the entry file more than once. If
+# another instance already serves the port, this one just stays alive so
+# the container isn't torn down, instead of fighting over Redis and 7860.
+if _port_in_use(PORT):
+    print(f"[space_app] port {PORT} already served by another instance; idling", file=sys.stderr)
+    while True:
+        time.sleep(3600)
 
 _procs: list[subprocess.Popen] = []
 
@@ -52,4 +69,4 @@ with gr.Blocks(title="AuditAgent API") as status:
 app = gr.mount_gradio_app(api, status, path="/")
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=int(os.environ.get("PORT", "7860")))
+    uvicorn.run(app, host="0.0.0.0", port=PORT)
