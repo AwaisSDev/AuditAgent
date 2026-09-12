@@ -35,7 +35,7 @@ class DraftedAnswer(BaseModel):
 
 async def draft_answer(question: str, candidate_events: list[dict]) -> DraftedAnswer:
     settings = get_settings()
-    client = AsyncAnthropic(api_key=settings.anthropic_api_key)
+    client = AsyncAnthropic(api_key=settings.anthropic_api_key, timeout=30.0)
 
     events_for_prompt = [
         {

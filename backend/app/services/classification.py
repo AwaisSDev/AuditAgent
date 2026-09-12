@@ -33,8 +33,12 @@ async def redact_with_llm(data: dict[str, Any]) -> dict[str, Any]:
     if not data:
         return data
     settings = get_settings()
-    client = AsyncAnthropic(api_key=settings.anthropic_api_key)
     try:
+        # An explicit timeout matters here: this runs inside the ingest
+        # worker, and a hung call (no API key, a slow/unreachable network
+        # path) must fail fast into the except below rather than leaving
+        # the event stuck in "processing" forever with no error surfaced.
+        client = AsyncAnthropic(api_key=settings.anthropic_api_key, timeout=15.0)
         response = await client.messages.create(
             model=settings.anthropic_haiku_model,
             max_tokens=2048,
