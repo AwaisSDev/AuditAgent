@@ -3,7 +3,29 @@
 Do [`MANUAL_SETUP.md`](MANUAL_SETUP.md) first — this assumes every account
 already exists and you just need the env vars wired up.
 
-## Backend + worker → Railway
+## Backend + worker → Hugging Face Spaces (free) or Railway
+
+### Option A: Hugging Face Spaces (free, one container)
+
+`backend/` is a ready-made Gradio Space (Docker Spaces are paid, Gradio
+Spaces are free): its `README.md` front matter points at `space_app.py`,
+which starts Redis and the worker and serves the API on port 7860.
+
+1. Create a Space at huggingface.co/new-space: SDK **Gradio**, template
+   **Blank**, hardware **CPU basic (free)**. Note its id, e.g. `you/AuditAgent`.
+2. In the Space's *Settings → Variables and secrets* add the variables listed
+   in `backend/README.md` (only `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`,
+   `CORS_ORIGINS`, `DASHBOARD_BASE_URL` and `APP_BASE_URL` are required).
+3. In this GitHub repo add secret `HF_TOKEN` (a Hugging Face token with
+   *write* access) and variable `HF_SPACE` (the id from step 1). The
+   `deploy-backend-hf.yml` workflow then pushes `backend/` to the Space on
+   every change; run it once by hand from the Actions tab to deploy now.
+4. The API is at `https://<you>-<space>.hf.space`; check `/healthz`. Use that
+   as `NEXT_PUBLIC_API_BASE_URL` on the website.
+
+Free Spaces sleep after ~48 hours idle and take about a minute to wake.
+
+### Option B: Railway
 
 Two services from the same repo (root directory `backend/`), sharing one Redis:
 

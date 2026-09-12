@@ -1,0 +1,251 @@
+/* Landing page — motion system.
+   Two mechanisms only, both borrowed from wallet.google:
+   1. Scroll-scrubbed pinned hero (progress is computed in hero.tsx and
+      written to inline styles; this file only holds the discrete
+      "text-out" state that flips at 10% progress).
+   2. Section reveals: an IntersectionObserver sets [data-scrolled] on a
+      section; descendants with [data-fade-order] then transition from
+      translateY(50%) (25% for media) to rest, 1s ease-in-out, staggered
+      0.3s per order. Nothing else moves. */
+
+.lp {
+  --lp-header-h: 64px;
+  --lp-fg: #3c4043;
+  --lp-fg-2: #5f6368;
+  --lp-fg-3: #80868b;
+  --lp-line: #e8eaed;
+  --lp-band: #f8f9fa;
+  --lp-accent: #ffa630;
+  --lp-accent-ink: #b45f06;
+  --lp-amber: #ffe8c2;
+  --lp-sage: #dcebdc;
+  --lp-sky: #d9e6f4;
+  --lp-rose: #f7dad4;
+  --lp-lilac: #e3ddf1;
+  --lp-sand: #ebe4d4;
+  color: var(--lp-fg);
+  background: #fff;
+  font-family: "Google Sans Flex", var(--font-sans), -apple-system, "Segoe UI", Arial, sans-serif;
+  font-optical-sizing: auto;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ---------- reveals ---------- */
+
+[data-fade] [data-fade-order] {
+  opacity: 0;
+  transform: translateY(50%);
+  will-change: opacity, transform;
+}
+[data-fade] [data-fade-order][data-fade-media] {
+  transform: translateY(25%);
+}
+[data-fade][data-scrolled] [data-fade-order] {
+  opacity: 1;
+  transform: none;
+  transition-property: opacity, transform;
+  transition-duration: 1s;
+  transition-timing-function: ease-in-out;
+}
+[data-fade][data-scrolled] [data-fade-order="2"] { transition-delay: 0.3s; }
+[data-fade][data-scrolled] [data-fade-order="3"] { transition-delay: 0.6s; }
+[data-fade][data-scrolled] [data-fade-order="4"] { transition-delay: 0.9s; }
+[data-fade][data-scrolled] [data-fade-order="5"] { transition-delay: 1.2s; }
+
+/* ---------- hero (pinned, scrubbed) ---------- */
+
+.lp-hero-pin {
+  position: sticky;
+  top: var(--lp-header-h);
+  height: calc(100vh - var(--lp-header-h));
+  min-height: 720px;
+  overflow: hidden;
+}
+
+.lp-hero-text {
+  transition: transform 0.4s ease-out, opacity 0.4s ease-out;
+  will-change: transform, opacity;
+}
+.lp-hero-stage {
+  transition: transform 0.4s ease-out;
+  will-change: transform;
+}
+.lp-hero[data-text-out="true"] .lp-hero-text {
+  opacity: 0;
+  transform: translateY(-40px);
+}
+.lp-hero[data-text-out="true"] .lp-hero-stage {
+  transform: translateY(var(--lp-stage-lift, -260px));
+}
+
+.lp-card {
+  position: absolute;
+  overflow: hidden;
+  cursor: pointer;
+  will-change: transform, width, height, border-radius;
+  --icon: 48px;
+  --glyph: 22px;
+  --title: 22px;
+  --pad: 24px;
+  --row: 72px;
+}
+.lp-card-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 0 var(--pad);
+  height: var(--row);
+}
+.lp-card-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: var(--icon);
+  height: var(--icon);
+  border-radius: 999px;
+  background: #fff;
+}
+.lp-card-icon svg {
+  width: var(--glyph);
+  height: var(--glyph);
+}
+.lp-card-title {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: var(--title);
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+.lp-card-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 0.2);
+}
+.lp-card:hover:not([data-open="true"]) {
+  filter: brightness(1.06);
+}
+/* The rest of the stack recedes behind an opened card. */
+.lp-hero:has(.lp-card[data-open="true"]) .lp-card:not([data-open="true"]) {
+  filter: brightness(0.8) saturate(0.85);
+}
+.lp-card:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: -4px;
+}
+/* Transitions only on the card that is opening or closing: the scrub
+   writes styles to the others every frame. */
+.lp-card[data-open="true"],
+.lp-card[data-closing="true"] {
+  transition:
+    transform 0.55s cubic-bezier(0.2, 0.8, 0.2, 1),
+    width 0.55s cubic-bezier(0.2, 0.8, 0.2, 1),
+    height 0.55s cubic-bezier(0.2, 0.8, 0.2, 1),
+    border-radius 0.55s cubic-bezier(0.2, 0.8, 0.2, 1),
+    box-shadow 0.3s ease,
+    filter 0.2s ease;
+}
+.lp-card-more,
+.lp-card-close {
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+.lp-card[data-open="true"] .lp-card-more {
+  opacity: 1;
+  transition-delay: 0.2s;
+}
+.lp-card[data-open="true"] .lp-card-close {
+  opacity: 1;
+}
+
+.lp-hero-hint {
+  transition: opacity 0.3s ease;
+}
+.lp-hero[data-text-out="true"] .lp-hero-hint,
+.lp-hero:has(.lp-card[data-open="true"]) .lp-hero-hint {
+  opacity: 0;
+}
+
+/* ---------- media illustrations: play once when the section is scrolled ---------- */
+
+@keyframes lp-pop {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: none; }
+}
+@keyframes lp-draw {
+  from { stroke-dashoffset: 1; }
+  to   { stroke-dashoffset: 0; }
+}
+@keyframes lp-stamp {
+  0%   { opacity: 0; transform: scale(1.25) rotate(-6deg); }
+  60%  { opacity: 1; transform: scale(0.96) rotate(-6deg); }
+  100% { opacity: 1; transform: scale(1) rotate(-6deg); }
+}
+@keyframes lp-caret {
+  50% { opacity: 0; }
+}
+
+[data-scrolled] .lp-anim-pop {
+  animation: lp-pop 0.5s ease-out both;
+  animation-delay: calc(0.9s + var(--i, 0) * 0.18s);
+}
+.lp-anim-pop { opacity: 0; }
+
+[data-scrolled] .lp-anim-draw {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: lp-draw 0.9s ease-in-out both;
+  animation-delay: calc(1s + var(--i, 0) * 0.25s);
+}
+.lp-anim-draw { stroke-dashoffset: 1; stroke-dasharray: 1; }
+
+[data-scrolled] .lp-anim-stamp {
+  animation: lp-stamp 0.45s cubic-bezier(0.2, 0.9, 0.3, 1.2) both;
+  animation-delay: 1.9s;
+}
+.lp-anim-stamp { opacity: 0; }
+
+.lp-caret {
+  display: inline-block;
+  width: 2px;
+  height: 1em;
+  vertical-align: -0.15em;
+  background: currentColor;
+  margin-left: 2px;
+  animation: lp-caret 1s steps(1) infinite;
+}
+
+/* ---------- jumplinks ---------- */
+
+.lp-jump {
+  scrollbar-width: none;
+}
+.lp-jump::-webkit-scrollbar { display: none; }
+
+/* ---------- reduced motion: land on the final frame of everything ---------- */
+
+@media (prefers-reduced-motion: reduce) {
+  [data-fade] [data-fade-order],
+  [data-fade] [data-fade-order][data-fade-media] {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+  .lp-hero-text,
+  .lp-hero-stage,
+  .lp-card {
+    transition: none !important;
+  }
+  .lp-anim-pop,
+  .lp-anim-stamp { opacity: 1; animation: none !important; }
+  .lp-hero-hint { display: none; }
+  .lp-anim-draw { stroke-dashoffset: 0; animation: none !important; }
+  .lp-caret { animation: none; }
+}

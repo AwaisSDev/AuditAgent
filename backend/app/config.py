@@ -48,7 +48,7 @@ class Settings(BaseSettings):
     # App
     app_base_url: str = "https://api.auditagent.dev"
     dashboard_base_url: str = "https://app.auditagent.dev"
-    cors_origins: str = "http://localhost:3000,https://app.auditagent.dev"
+    cors_origins: str = "http://localhost:3000,https://app.auditagent.dev,https://getauditagent.vercel.app"
     approval_timeout_minutes: int = 30
 
     @property

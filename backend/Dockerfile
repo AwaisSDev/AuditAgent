@@ -1,15 +1,28 @@
 FROM python:3.11-slim
 
-WORKDIR /app
+# gcc for a couple of wheels; redis-server so a single container can also
+# host the job queue (see start.sh). Railway uses its own Redis plugin and
+# simply never starts this one.
+RUN apt-get update && apt-get install -y --no-install-recommends gcc redis-server \
+    && rm -rf /var/lib/apt/lists/*
 
-RUN apt-get update && apt-get install -y --no-install-recommends gcc && rm -rf /var/lib/apt/lists/*
+WORKDIR /app
 
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
-RUN python -m spacy download en_core_web_sm
 
 COPY app ./app
+COPY start.sh .
+RUN chmod +x start.sh
 
-EXPOSE 8000
+# Hugging Face Spaces run the container as UID 1000; give it a home so
+# anything that wants to write (caches, temp files) has somewhere to go.
+RUN useradd -m -u 1000 app && chown -R app:app /app
+USER app
+ENV HOME=/home/app
 
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# 7860 is what Hugging Face Spaces expects; Railway passes $PORT instead.
+EXPOSE 7860
+ENV PORT=7860
+
+CMD ["./start.sh"]

@@ -15,6 +15,7 @@ const config: Config = {
           "Arial",
           "sans-serif",
         ],
+        mono: ["var(--font-mono)", "ui-monospace", "SFMono-Regular", "Menlo", "Consolas", "monospace"],
       },
       colors: {
         border: "hsl(var(--border))",
