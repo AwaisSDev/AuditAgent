@@ -66,7 +66,9 @@ with gr.Blocks(title="AuditAgent API") as status:
         "Health: [/healthz](healthz) · OpenAPI: [/docs](docs)"
     )
 
-app = gr.mount_gradio_app(api, status, path="/")
+# ssr_mode=False: on Spaces, Gradio's SSR mode starts a Node front-end server
+# that takes port 7860 for itself, which is the port uvicorn needs below.
+app = gr.mount_gradio_app(api, status, path="/", ssr_mode=False)
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=PORT)
