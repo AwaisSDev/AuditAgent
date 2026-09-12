@@ -1,29 +1,23 @@
 from contextlib import asynccontextmanager
 
-from arq import create_pool
-from arq.connections import RedisSettings
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.arq_pool import close_arq_pool, get_arq_pool
 from app.config import get_settings
 from app.routers import agents, approvals, auth, billing, events, ingest, mcp_data, policies, questionnaires, slack, soc2, workspaces
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    settings = get_settings()
-    try:
-        app.state.arq_pool = await create_pool(RedisSettings.from_dsn(settings.redis_url))
-    except Exception as exc:  # noqa: BLE001 — deliberately broad: Redis being down must never crash the API
-        # Redis is required for the ingest/questionnaire pipelines (see
-        # worker/), but its absence shouldn't take down the whole API —
-        # every other route (workspaces, agents, policies, approvals,
-        # billing, SOC2) has no dependency on it.
-        print(f"WARNING: could not connect to Redis at startup ({exc}); ingest and questionnaire uploads will be unavailable.")
-        app.state.arq_pool = None
+    # Warm the pool at startup when lifespan actually runs (plain uvicorn,
+    # Railway). When this app is mounted under another ASGI app (the
+    # Hugging Face Gradio Space — see space_app.py), Starlette never fires
+    # lifespan for a mounted sub-app, so routes fall back to creating the
+    # pool lazily on first use via app.arq_pool.get_arq_pool().
+    await get_arq_pool()
     yield
-    if app.state.arq_pool is not None:
-        await app.state.arq_pool.close()
+    await close_arq_pool()
 
 
 app = FastAPI(title="AuditAgent API", version="0.1.0", lifespan=lifespan)

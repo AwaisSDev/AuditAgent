@@ -1,10 +1,10 @@
 import uuid
 from datetime import datetime, timezone
 
-from arq import ArqRedis
-from fastapi import APIRouter, Depends, HTTPException, Request, UploadFile
+from fastapi import APIRouter, Depends, HTTPException, UploadFile
 from fastapi.responses import StreamingResponse
 
+from app.arq_pool import get_arq_pool
 from app.db import get_db
 from app.models.schemas import AnswerOut, AnswerUpdateIn, QuestionnaireOut
 from app.security import CurrentUser, require_workspace_member
@@ -25,7 +25,6 @@ async def list_questionnaires(workspace_id: str, user: CurrentUser = Depends(req
 @router.post("/questionnaires", response_model=QuestionnaireOut, status_code=201)
 async def upload_questionnaire(
     workspace_id: str,
-    request: Request,
     file: UploadFile,
     user: CurrentUser = Depends(require_workspace_member),
 ) -> QuestionnaireOut:
@@ -70,7 +69,7 @@ async def upload_questionnaire(
         .execute()
     ).data[0]
 
-    arq_pool: ArqRedis | None = request.app.state.arq_pool
+    arq_pool = await get_arq_pool()
     if arq_pool is None:
         raise HTTPException(status_code=503, detail="Background processing (Redis) is not configured on this server yet.")
     await arq_pool.enqueue_job("process_questionnaire", created["id"])

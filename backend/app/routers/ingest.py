@@ -1,8 +1,8 @@
 from datetime import datetime, timezone
 
-from arq import ArqRedis
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException
 
+from app.arq_pool import get_arq_pool
 from app.db import get_db
 from app.models.schemas import EventIn, EventIngestResponse
 from app.security import WorkspaceKeyAuth, get_api_key_auth
@@ -14,7 +14,6 @@ router = APIRouter(prefix="/v1", tags=["ingest"])
 @router.post("/events", response_model=EventIngestResponse, status_code=202)
 async def ingest_event(
     event: EventIn,
-    request: Request,
     auth: WorkspaceKeyAuth = Depends(get_api_key_auth),
 ) -> EventIngestResponse:
     """Accepts an event from the SDK and returns immediately.
@@ -56,7 +55,7 @@ async def ingest_event(
     )
     intake_id = intake.data[0]["id"]
 
-    arq_pool: ArqRedis | None = request.app.state.arq_pool
+    arq_pool = await get_arq_pool()
     if arq_pool is None:
         raise HTTPException(status_code=503, detail="Background processing (Redis) is not configured on this server yet.")
     await arq_pool.enqueue_job("process_event_intake", intake_id)
