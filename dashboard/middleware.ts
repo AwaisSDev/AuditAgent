@@ -5,6 +5,13 @@ const PUBLIC_PATHS = ["/login"];
 const LANDING_PATH = "/";
 
 export async function middleware(request: NextRequest) {
+  // Public static assets (logo.png, fonts, etc.) must never require a
+  // session — the matcher config's own regex isn't reliably parsed by
+  // Next's path-to-regexp for this, so check it here in plain JS instead.
+  if (/\.[\w]+$/.test(request.nextUrl.pathname)) {
+    return NextResponse.next();
+  }
+
   let response = NextResponse.next({ request: { headers: request.headers } });
 
   const supabase = createServerClient(

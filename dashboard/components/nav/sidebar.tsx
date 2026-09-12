@@ -33,7 +33,7 @@ export function Sidebar({ open, onClose }: { open?: boolean; onClose?: () => voi
 
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 z-50 flex h-screen w-[288px] shrink-0 -translate-x-full flex-col bg-sidebar transition-transform duration-200 md:static md:translate-x-0",
+          "fixed inset-y-0 left-0 z-50 flex h-screen w-[288px] shrink-0 -translate-x-full flex-col border-r border-border bg-sidebar transition-transform duration-200 md:translate-x-0",
           open && "translate-x-0"
         )}
       >

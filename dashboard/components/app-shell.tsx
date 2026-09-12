@@ -42,11 +42,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   if (workspaces.length === 0) return <CreateWorkspace />;
 
   return (
-    <div className="flex">
+    <div className="md:flex">
       <Sidebar open={mobileNavOpen} onClose={() => setMobileNavOpen(false)} />
 
-      <div className="flex min-h-screen w-full flex-col md:w-auto md:flex-1">
-        <div className="flex items-center gap-3 border-b border-border px-4 py-3 md:hidden">
+      <div className="flex min-h-screen w-full flex-col md:ml-[288px] md:w-auto md:flex-1">
+        <div className="sticky top-0 z-30 flex items-center gap-3 border-b border-border bg-background px-4 py-3 md:hidden">
           <button
             onClick={() => setMobileNavOpen(true)}
             className="rounded-md p-1.5 text-foreground hover:bg-muted"

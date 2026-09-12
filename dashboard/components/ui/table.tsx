@@ -24,7 +24,7 @@ export function TH({ className, ...props }: React.ThHTMLAttributes<HTMLTableCell
   return (
     <th
       className={cn(
-        "h-11 whitespace-nowrap px-4 text-left align-middle text-sm font-medium text-muted-foreground",
+        "h-11 whitespace-nowrap px-2 text-left align-middle text-sm font-medium text-muted-foreground sm:px-4",
         className
       )}
       {...props}
@@ -33,5 +33,5 @@ export function TH({ className, ...props }: React.ThHTMLAttributes<HTMLTableCell
 }
 
 export function TD({ className, ...props }: React.TdHTMLAttributes<HTMLTableCellElement>) {
-  return <td className={cn("px-4 py-3.5 align-middle", className)} {...props} />;
+  return <td className={cn("px-2 py-3.5 align-middle sm:px-4", className)} {...props} />;
 }

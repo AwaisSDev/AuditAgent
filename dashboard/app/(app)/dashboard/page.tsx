@@ -44,7 +44,7 @@ export default function TimelinePage() {
       <h1 className="text-2xl font-semibold tracking-tight">Timeline</h1>
 
       <div className="flex flex-wrap items-center gap-2">
-        <Select value={agentId} onChange={(e) => setAgentId(e.target.value)} className="w-40">
+        <Select value={agentId} onChange={(e) => setAgentId(e.target.value)} className="w-[calc(50%-4px)] sm:w-40">
           <option value="">All agents</option>
           {agents.map((a) => (
             <option key={a.id} value={a.id}>
@@ -56,9 +56,9 @@ export default function TimelinePage() {
           placeholder="Filter by action type..."
           value={actionType}
           onChange={(e) => setActionType(e.target.value)}
-          className="w-52"
+          className="w-full sm:w-52"
         />
-        <Select value={status} onChange={(e) => setStatus(e.target.value)} className="w-40">
+        <Select value={status} onChange={(e) => setStatus(e.target.value)} className="w-[calc(50%-4px)] sm:w-40">
           <option value="">All statuses</option>
           <option value="completed">Completed</option>
           <option value="approved">Approved</option>
@@ -74,10 +74,10 @@ export default function TimelinePage() {
             <TR>
               <TH>When</TH>
               <TH>Agent action</TH>
-              <TH>Type</TH>
+              <TH className="hidden sm:table-cell">Type</TH>
               <TH>Status</TH>
-              <TH>Latency</TH>
-              <TH>Cost</TH>
+              <TH className="hidden md:table-cell">Latency</TH>
+              <TH className="hidden md:table-cell">Cost</TH>
             </TR>
           </THead>
           <TBody>
@@ -90,16 +90,16 @@ export default function TimelinePage() {
                   <TD>
                     <Skeleton className="h-4 w-36" />
                   </TD>
-                  <TD>
+                  <TD className="hidden sm:table-cell">
                     <Skeleton className="h-4 w-20" />
                   </TD>
                   <TD>
                     <Skeleton className="h-5 w-20 rounded-full" />
                   </TD>
-                  <TD>
+                  <TD className="hidden md:table-cell">
                     <Skeleton className="h-4 w-12" />
                   </TD>
-                  <TD>
+                  <TD className="hidden md:table-cell">
                     <Skeleton className="h-4 w-14" />
                   </TD>
                 </TR>
@@ -109,15 +109,20 @@ export default function TimelinePage() {
                 {events?.map((e) => (
                   <TR key={e.id} className="cursor-pointer" onClick={() => setSelected(e)}>
                     <TD className="whitespace-nowrap text-muted-foreground">{formatDate(e.created_at)}</TD>
-                    <TD className="font-medium">{e.action_name}</TD>
-                    <TD className="text-muted-foreground">{e.action_type}</TD>
+                    <TD
+                      className="max-w-[84px] overflow-hidden text-ellipsis whitespace-nowrap font-medium sm:max-w-none sm:overflow-visible sm:whitespace-normal"
+                      title={e.action_name}
+                    >
+                      {e.action_name}
+                    </TD>
+                    <TD className="hidden text-muted-foreground sm:table-cell">{e.action_type}</TD>
                     <TD>
                       <StatusBadge status={e.status} />
                     </TD>
-                    <TD className="tabular-nums text-muted-foreground">
+                    <TD className="hidden tabular-nums text-muted-foreground md:table-cell">
                       {e.latency_ms != null ? `${e.latency_ms}ms` : "—"}
                     </TD>
-                    <TD className="tabular-nums text-muted-foreground">
+                    <TD className="hidden tabular-nums text-muted-foreground md:table-cell">
                       {e.cost_usd != null ? `$${e.cost_usd.toFixed(4)}` : "—"}
                     </TD>
                   </TR>
