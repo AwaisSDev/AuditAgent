@@ -13,6 +13,14 @@ falls through to the API, middleware included.
 Locally you would never run this; use uvicorn + run_worker.py.
 """
 
+# On ZeroGPU Spaces, `spaces` must be imported before anything touches
+# torch/CUDA (spaCy's backend imports torch when it is installed), or
+# Gradio's reload watcher fails at startup. Not installed elsewhere.
+try:
+    import spaces  # noqa: F401
+except ImportError:
+    pass
+
 import atexit
 import os
 import socket
