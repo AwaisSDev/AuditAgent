@@ -30,6 +30,12 @@ import time
 from pathlib import Path
 
 import gradio as gr
+import gradio.http_server
+
+# On Spaces, Gradio starts a dev-only hot-reload watcher that scans every
+# loaded Python object; it trips over lazy imports in third-party SDKs.
+# Nothing here needs reloading, so make the watcher a no-op.
+gradio.http_server.watchfn_spaces = lambda reloader: None  # type: ignore[assignment]
 
 HERE = Path(__file__).resolve().parent
 PORT = int(os.environ.get("PORT", "7860"))
