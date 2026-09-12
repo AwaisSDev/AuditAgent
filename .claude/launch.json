@@ -1,0 +1,29 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "auditagent-dashboard",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "dashboard", "run", "dev"],
+      "port": 3000
+    },
+    {
+      "name": "auditagent-backend",
+      "runtimeExecutable": "backend/.venv/Scripts/python.exe",
+      "runtimeArgs": ["-m", "uvicorn", "app.main:app", "--app-dir", "backend", "--host", "0.0.0.0", "--port", "8000", "--reload", "--reload-dir", "backend/app"],
+      "port": 8000,
+      "url": "http://localhost:8000"
+    },
+    {
+      "name": "redis",
+      "runtimeExecutable": "C:\\Program Files\\Redis\\redis-server.exe",
+      "port": 6379
+    },
+    {
+      "name": "auditagent-worker",
+      "runtimeExecutable": "backend/.venv/Scripts/python.exe",
+      "runtimeArgs": ["backend/run_worker.py"],
+      "port": 8001
+    }
+  ]
+}

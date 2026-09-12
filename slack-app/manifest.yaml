@@ -1,0 +1,24 @@
+display_information:
+  name: AuditAgent
+  description: Approve or reject AI agent actions right from Slack.
+  background_color: "#1a1a2e"
+
+features:
+  bot_user:
+    display_name: AuditAgent
+    always_online: true
+
+oauth_config:
+  scopes:
+    bot:
+      - chat:write
+      - chat:write.public
+
+settings:
+  interactivity:
+    is_enabled: true
+    # Replace with your deployed backend URL before installing.
+    request_url: https://api.auditagent.dev/v1/slack/interactions
+  org_deploy_enabled: false
+  socket_mode_enabled: false
+  token_rotation_enabled: false

@@ -1,0 +1,63 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Warm neutral palette — text and grays carry a slight brown tint (not cool
+   blue-gray) instead of a pure black/gray scale, which is most of what
+   separates a "designed" neutral UI from a default one. */
+:root {
+  --background: 0 0% 100%;
+  --foreground: 45 8% 20%;
+  --card: 0 0% 100%;
+  --sidebar: 40 20% 97%;
+  --border: 40 11% 90%;
+  --muted: 40 10% 95%;
+  --muted-foreground: 40 6% 46%;
+  --primary: 45 8% 20%;
+  --primary-foreground: 0 0% 100%;
+  --destructive: 0 72% 63%;
+  --destructive-foreground: 0 0% 100%;
+  --warning: 38 80% 50%;
+  --warning-foreground: 0 0% 100%;
+  --ring: 45 8% 20%;
+  --skeleton: 40 9% 83%;
+  --skeleton-shine: 40 10% 91%;
+}
+
+.dark {
+  --background: 30 3% 10%;
+  --foreground: 40 5% 92%;
+  --card: 30 3% 12%;
+  --sidebar: 30 4% 13%;
+  --border: 40 4% 22%;
+  --muted: 40 3% 17%;
+  --muted-foreground: 40 4% 65%;
+  --primary: 40 5% 92%;
+  --primary-foreground: 30 3% 12%;
+  --destructive: 0 60% 55%;
+  --destructive-foreground: 0 0% 100%;
+  --warning: 38 75% 55%;
+  --warning-foreground: 30 3% 10%;
+  --ring: 40 5% 80%;
+  --skeleton: 40 4% 26%;
+  --skeleton-shine: 40 4% 34%;
+}
+
+body {
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
+  font-feature-settings: "cv11", "ss01", "tnum";
+}
+
+::selection {
+  background-color: hsl(var(--foreground) / 0.12);
+}
+
+@keyframes shimmer {
+  from {
+    background-position: 150% 0;
+  }
+  to {
+    background-position: -150% 0;
+  }
+}
