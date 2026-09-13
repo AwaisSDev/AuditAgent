@@ -41,7 +41,7 @@ export function Sidebar({ open, onClose }: { open?: boolean; onClose?: () => voi
           {/* eslint-disable-next-line @next/next/no-img-element -- next/image's optimizer (sharp) fails on this PNG */}
           <img src="/logo.png" alt="" width={26} height={26} className="shrink-0" />
           <span className="flex-1 text-base font-semibold tracking-tight text-foreground">AuditAgent</span>
-          <button onClick={onClose} className="rounded-md p-1 text-muted-foreground hover:bg-muted md:hidden">
+          <button onClick={onClose} aria-label="Close menu" className="rounded-md p-1 text-muted-foreground hover:bg-muted md:hidden">
             <X className="h-5 w-5" />
           </button>
         </div>

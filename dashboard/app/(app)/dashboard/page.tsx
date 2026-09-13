@@ -2,11 +2,12 @@
 
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { api } from "@/lib/api";
+import { api, downloadFile } from "@/lib/api";
 import { useWorkspace } from "@/lib/workspace-context";
 import { Card } from "@/components/ui/card";
 import { Select } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
 import { StatusBadge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -41,7 +42,17 @@ export default function TimelinePage() {
 
   return (
     <div className="space-y-5">
-      <h1 className="text-2xl font-semibold tracking-tight">Timeline</h1>
+      <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <h1 className="text-2xl font-semibold tracking-tight">Timeline</h1>
+        <Button
+          variant="outline"
+          size="sm"
+          disabled={!workspace}
+          onClick={() => downloadFile(`/v1/workspaces/${workspace!.id}/events/export.csv?${params.toString()}`, "auditagent-events.csv")}
+        >
+          Export CSV
+        </Button>
+      </div>
 
       <div className="flex flex-wrap items-center gap-2">
         <Select value={agentId} onChange={(e) => setAgentId(e.target.value)} className="w-[calc(50%-4px)] sm:w-40">

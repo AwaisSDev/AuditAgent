@@ -25,8 +25,20 @@ _PLAN_TO_PRICE_ENV = {
 _PRICE_TO_PLAN_CACHE: dict[str, str] | None = None
 
 
+class BillingNotConfiguredError(Exception):
+    """Raised instead of letting a bare Stripe SDK call blow up with an
+    unhelpful "you did not provide an API key" error. An unhandled exception
+    here previously surfaced to the browser as a silent failure — Starlette's
+    default 500 response for an unhandled exception isn't passed back through
+    CORSMiddleware, so the browser's fetch just sees a blocked, unreadable
+    network error with no message at all (see routers/billing.py)."""
+
+
 def _configure() -> None:
-    stripe.api_key = get_settings().stripe_secret_key
+    settings = get_settings()
+    if not settings.stripe_secret_key:
+        raise BillingNotConfiguredError("Billing isn't configured on this server yet (no Stripe secret key).")
+    stripe.api_key = settings.stripe_secret_key
 
 
 def price_id_for_plan(plan: str) -> str:
@@ -34,7 +46,10 @@ def price_id_for_plan(plan: str) -> str:
     getter = _PLAN_TO_PRICE_ENV.get(plan)
     if not getter:
         raise ValueError(f"No Stripe price configured for plan '{plan}'")
-    return getter(settings)
+    price_id = getter(settings)
+    if not price_id:
+        raise BillingNotConfiguredError(f"No Stripe price is configured for the '{plan}' plan yet.")
+    return price_id
 
 
 def plan_for_price_id(price_id: str) -> str | None:

@@ -18,7 +18,7 @@ export function EventDetailDialog({ event, onClose }: { event: AuditEvent | null
 
           <div>
             <div className="mb-1 text-xs font-medium text-muted-foreground">Inputs (redacted)</div>
-            <pre className="max-h-40 overflow-auto rounded-md bg-muted p-2 text-xs">
+            <pre className="max-h-40 overflow-auto whitespace-pre-wrap break-all rounded-md bg-muted p-2 text-xs">
               {JSON.stringify(event.inputs_redacted, null, 2)}
             </pre>
           </div>
@@ -26,7 +26,7 @@ export function EventDetailDialog({ event, onClose }: { event: AuditEvent | null
           {event.output_redacted != null && (
             <div>
               <div className="mb-1 text-xs font-medium text-muted-foreground">Output (redacted)</div>
-              <pre className="max-h-40 overflow-auto rounded-md bg-muted p-2 text-xs">
+              <pre className="max-h-40 overflow-auto whitespace-pre-wrap break-all rounded-md bg-muted p-2 text-xs">
                 {JSON.stringify(event.output_redacted, null, 2)}
               </pre>
             </div>

@@ -86,7 +86,7 @@ export default function LoginPage() {
                 autoComplete={mode === "signin" ? "current-password" : "new-password"}
               />
             </div>
-            {error && <p className="text-[13px] text-destructive">{error}</p>}
+            {error && <p className="text-[13px] text-error">{error}</p>}
             <Button type="submit" className="w-full !mt-4" disabled={loading}>
               {loading ? "Please wait..." : mode === "signin" ? "Sign in" : "Create account"}
             </Button>

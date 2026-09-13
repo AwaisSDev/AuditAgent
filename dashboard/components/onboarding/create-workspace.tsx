@@ -38,6 +38,11 @@ export function CreateWorkspace() {
               <label className="text-xs font-medium text-muted-foreground">Workspace name</label>
               <Input placeholder="Acme Inc" value={name} onChange={(e) => setName(e.target.value)} required autoFocus />
             </div>
+            {create.isError && (
+              <p className="text-[13px] text-error">
+                {create.error instanceof Error ? create.error.message : "Couldn't create your workspace. Please try again."}
+              </p>
+            )}
             <Button type="submit" className="w-full" disabled={create.isPending}>
               {create.isPending ? "Creating..." : "Create workspace"}
             </Button>

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import atexit
 import inspect
 import queue
 import sys
@@ -19,6 +20,12 @@ F = TypeVar("F", bound=Callable[..., Any])
 
 DEFAULT_BASE_URL = "https://api.auditagent.dev"
 POLL_INTERVAL_SECONDS = 2.0
+# An approval poll can run for up to the server's approval window (30 min by
+# default) — a single transient network blip during that whole span
+# shouldn't kill the wait the way it would a one-shot request. Only give up
+# after several consecutive failures, which is what actually indicates the
+# backend is down rather than a momentary hiccup.
+MAX_CONSECUTIVE_POLL_ERRORS = 5
 
 
 class AuditAgent:
@@ -56,8 +63,17 @@ class AuditAgent:
 
         self._queue: queue.Queue = queue.Queue()
         self._stop = threading.Event()
+        self._closed = False
         self._thread = threading.Thread(target=self._flush_loop, daemon=True)
         self._thread.start()
+
+        # The flush thread is a daemon so it never blocks process exit, but
+        # that means a normal (non-crash) exit kills it mid-queue unless
+        # something flushes first. Registering this here — instead of
+        # documenting "remember to call atexit.register(audit.close)" as a
+        # quickstart step — means a dropped audit event on ordinary exit
+        # isn't something every integration has to remember to prevent.
+        atexit.register(self.close)
 
     # -- setup -----------------------------------------------------------
 
@@ -115,6 +131,13 @@ class AuditAgent:
             time.sleep(0.05)
 
     def close(self) -> None:
+        # Idempotent: atexit will call this even if the caller also calls it
+        # explicitly (e.g. in a `finally` block), and joining an
+        # already-finished thread twice would otherwise be harmless but the
+        # double flush() wait is not free.
+        if self._closed:
+            return
+        self._closed = True
         self.flush()
         self._stop.set()
         self._thread.join(timeout=5.0)
@@ -140,10 +163,18 @@ class AuditAgent:
             resp.raise_for_status()
             approval_id = resp.json()["approval_id"]
 
+            consecutive_errors = 0
             while True:
                 time.sleep(POLL_INTERVAL_SECONDS)
-                status_resp = client.get(f"{self.base_url}/v1/approvals/{approval_id}/status", headers=self._headers())
-                status_resp.raise_for_status()
+                try:
+                    status_resp = client.get(f"{self.base_url}/v1/approvals/{approval_id}/status", headers=self._headers())
+                    status_resp.raise_for_status()
+                except httpx.TransportError:
+                    consecutive_errors += 1
+                    if consecutive_errors >= MAX_CONSECUTIVE_POLL_ERRORS:
+                        raise
+                    continue
+                consecutive_errors = 0
                 status = status_resp.json()
                 if status["status"] != "pending":
                     return status
@@ -165,12 +196,20 @@ class AuditAgent:
             resp.raise_for_status()
             approval_id = resp.json()["approval_id"]
 
+            consecutive_errors = 0
             while True:
                 # asyncio.sleep, not time.sleep: this must not block the host
                 # app's event loop for the duration of the approval window.
                 await asyncio.sleep(POLL_INTERVAL_SECONDS)
-                status_resp = await client.get(f"{self.base_url}/v1/approvals/{approval_id}/status", headers=self._headers())
-                status_resp.raise_for_status()
+                try:
+                    status_resp = await client.get(f"{self.base_url}/v1/approvals/{approval_id}/status", headers=self._headers())
+                    status_resp.raise_for_status()
+                except httpx.TransportError:
+                    consecutive_errors += 1
+                    if consecutive_errors >= MAX_CONSECUTIVE_POLL_ERRORS:
+                        raise
+                    continue
+                consecutive_errors = 0
                 status = status_resp.json()
                 if status["status"] != "pending":
                     return status
@@ -202,7 +241,12 @@ class AuditAgent:
                         _raise_if_denied(name, decision)
 
                     start = time.perf_counter()
-                    output = await func(*args, **kwargs)
+                    try:
+                        output = await func(*args, **kwargs)
+                    except Exception as exc:
+                        latency_ms = int((time.perf_counter() - start) * 1000)
+                        self._log_error(action_type, name, inputs, exc, latency_ms)
+                        raise
                     latency_ms = int((time.perf_counter() - start) * 1000)
                     self._log_success(action_type, name, inputs, output, latency_ms, cost_fn)
                     return output
@@ -219,7 +263,12 @@ class AuditAgent:
                     _raise_if_denied(name, decision)
 
                 start = time.perf_counter()
-                output = func(*args, **kwargs)
+                try:
+                    output = func(*args, **kwargs)
+                except Exception as exc:
+                    latency_ms = int((time.perf_counter() - start) * 1000)
+                    self._log_error(action_type, name, inputs, exc, latency_ms)
+                    raise
                 latency_ms = int((time.perf_counter() - start) * 1000)
                 self._log_success(action_type, name, inputs, output, latency_ms, cost_fn)
                 return output
@@ -248,6 +297,24 @@ class AuditAgent:
             cost_usd=cost,
             latency_ms=latency_ms,
             status="completed",
+        )
+
+    def _log_error(self, action_type: str, name: str, inputs: dict, exc: Exception, latency_ms: int) -> None:
+        # The wrapped call raised. Still worth a row: "every action, on the
+        # record" includes the ones that failed, not just the ones that
+        # succeeded — an audit trail with a hole where errors go is a worse
+        # product than one with fewer features.
+        self._enqueue_event(
+            agent_name=self.agent_name,
+            action_type=action_type,
+            action_name=name,
+            inputs=inputs,
+            output={"error": type(exc).__name__, "message": str(exc)[:2000]},
+            model=inputs.get("model"),
+            prompt_hash=hash_prompt(inputs),
+            cost_usd=None,
+            latency_ms=latency_ms,
+            status="error",
         )
 
     def _log_approval_outcome(self, action_type: str, name: str, inputs: dict, decision: dict) -> None:

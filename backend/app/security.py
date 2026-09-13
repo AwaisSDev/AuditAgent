@@ -1,3 +1,4 @@
+import asyncio
 import hashlib
 import secrets
 from dataclasses import dataclass
@@ -8,7 +9,7 @@ import jwt
 from fastapi import Depends, Header, HTTPException, status
 
 from app.config import get_settings
-from app.db import get_db
+from app.db import get_db, run_db
 
 
 @lru_cache
@@ -46,8 +47,11 @@ async def get_current_user(authorization: str | None = Header(default=None)) -> 
             # Legacy projects: static HS256 secret.
             payload = jwt.decode(token, settings.supabase_jwt_secret, algorithms=["HS256"], audience="authenticated")
         else:
-            # New projects: verify against Supabase's published JWKS.
-            signing_key = _jwks_client().get_signing_key_from_jwt(token)
+            # New projects: verify against Supabase's published JWKS. Only
+            # actually hits the network on a cache miss (PyJWKClient caches
+            # signing keys), but that fetch is itself a blocking call, so it
+            # still needs to run off the event loop.
+            signing_key = await asyncio.to_thread(_jwks_client().get_signing_key_from_jwt, token)
             payload = jwt.decode(token, signing_key.key, algorithms=["ES256"], audience="authenticated")
     except jwt.PyJWTError as exc:
         raise _unauthorized("Invalid or expired token") from exc
@@ -56,8 +60,8 @@ async def get_current_user(authorization: str | None = Header(default=None)) -> 
 
 async def require_workspace_member(workspace_id: str, user: CurrentUser = Depends(get_current_user)) -> CurrentUser:
     db = get_db()
-    res = (
-        db.table("workspace_members")
+    res = await run_db(
+        lambda: db.table("workspace_members")
         .select("user_id")
         .eq("workspace_id", workspace_id)
         .eq("user_id", user.id)
@@ -93,8 +97,8 @@ async def get_api_key_auth(authorization: str | None = Header(default=None)) -> 
     key_hash = hash_api_key(api_key)
 
     db = get_db()
-    res = (
-        db.table("api_keys")
+    res = await run_db(
+        lambda: db.table("api_keys")
         .select("id, workspace_id, revoked_at, key_hash")
         .eq("key_prefix", prefix)
         .limit(1)
@@ -109,6 +113,11 @@ async def get_api_key_auth(authorization: str | None = Header(default=None)) -> 
     if not secrets.compare_digest(row["key_hash"], key_hash):
         raise _unauthorized("Invalid API key")
 
-    db.table("api_keys").update({"last_used_at": datetime.now(timezone.utc).isoformat()}).eq("id", row["id"]).execute()
+    await run_db(
+        lambda: db.table("api_keys")
+        .update({"last_used_at": datetime.now(timezone.utc).isoformat()})
+        .eq("id", row["id"])
+        .execute()
+    )
 
     return WorkspaceKeyAuth(workspace_id=row["workspace_id"], api_key_id=row["id"])

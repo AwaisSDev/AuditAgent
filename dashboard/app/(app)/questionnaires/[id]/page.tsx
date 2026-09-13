@@ -24,7 +24,7 @@ export default function QuestionnaireDetailPage() {
 
   return (
     <div className="max-w-3xl space-y-5">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-2xl font-semibold tracking-tight">Review answers</h1>
         <div className="flex gap-2">
           <Button
@@ -80,7 +80,7 @@ function AnswerCard({
     <Card>
       <CardContent className="space-y-2 pt-4">
         <div className="flex items-start justify-between gap-3">
-          <p className="font-medium">{answer.question_text}</p>
+          <p className="min-w-0 flex-1 font-medium">{answer.question_text}</p>
           <StatusBadge status={answer.status === "draft" ? "pending" : "completed"} />
         </div>
         <Textarea rows={4} value={text} onChange={(e) => setText(e.target.value)} />
@@ -97,6 +97,11 @@ function AnswerCard({
             Approve final wording
           </Button>
         </div>
+        {save.isError && (
+          <p className="text-[13px] text-error">
+            {save.error instanceof Error ? save.error.message : "Couldn't save. Please try again."}
+          </p>
+        )}
       </CardContent>
     </Card>
   );

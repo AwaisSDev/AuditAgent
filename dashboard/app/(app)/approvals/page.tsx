@@ -32,12 +32,14 @@ export default function ApprovalsPage() {
   const decide = useMutation({
     mutationFn: (vars: { id: string; decision: "approved" | "rejected"; decision_note?: string; edited_action?: Record<string, unknown> }) =>
       api.post(`/v1/workspaces/${workspace!.id}/approvals/${vars.id}/decide`, {
+        // decision_by isn't sent — the backend always attributes the decision
+        // to the authenticated user (Depends(require_workspace_member)),
+        // never a client-supplied value.
         decision: vars.decision,
-        decision_by: "dashboard",
         decision_note: vars.decision_note,
         edited_action: vars.edited_action,
       }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["approvals", workspace?.id] }),
+    onSettled: () => queryClient.invalidateQueries({ queryKey: ["approvals", workspace?.id] }),
   });
 
   function openEdit(approval: Approval) {
@@ -84,6 +86,12 @@ export default function ApprovalsPage() {
         </div>
       )}
 
+      {decide.isError && (
+        <p className="text-[13px] text-error">
+          {decide.error instanceof Error ? decide.error.message : "Couldn't record that decision. Please try again."}
+        </p>
+      )}
+
       {!isLoading && approvals.length === 0 && (
         <Card>
           <CardContent className="py-8 text-center text-muted-foreground">Nothing here.</CardContent>
@@ -105,25 +113,40 @@ export default function ApprovalsPage() {
                   {a.requested_action.action_type} · requested {formatDate(a.requested_at)}
                   {a.decided_at && ` · decided ${formatDate(a.decided_at)} by ${a.decision_by}`}
                 </div>
-                <pre className="mt-1 max-w-xl overflow-auto rounded-md bg-muted p-2 text-xs">
+                <pre className="mt-1 max-w-xl overflow-auto whitespace-pre-wrap break-all rounded-md bg-muted p-2 text-xs">
                   {JSON.stringify(a.requested_action.inputs_preview, null, 2)}
                 </pre>
                 {a.decision_note && <p className="text-xs italic text-muted-foreground">"{a.decision_note}"</p>}
               </div>
 
-              {a.status === "pending" && (
-                <div className="flex shrink-0 gap-2">
-                  <Button size="sm" onClick={() => decide.mutate({ id: a.id, decision: "approved" })}>
-                    Approve
-                  </Button>
-                  <Button size="sm" variant="outline" onClick={() => openEdit(a)}>
-                    Edit...
-                  </Button>
-                  <Button size="sm" variant="destructive" onClick={() => decide.mutate({ id: a.id, decision: "rejected" })}>
-                    Reject
-                  </Button>
-                </div>
-              )}
+              {a.status === "pending" && (() => {
+                // Scoped to this row, not every pending card at once — under
+                // slow network the mutation can be in flight for seconds,
+                // and without this a user unsure whether their click landed
+                // could fire it again (harmless — the backend's
+                // compare-and-swap guard rejects the second one — but
+                // confusing: they'd see an "already decided" error for a
+                // decision that was actually their own first click).
+                const pendingHere = decide.isPending && decide.variables?.id === a.id;
+                return (
+                  <div className="flex shrink-0 gap-2">
+                    <Button size="sm" disabled={pendingHere} onClick={() => decide.mutate({ id: a.id, decision: "approved" })}>
+                      {pendingHere && decide.variables?.decision === "approved" ? "Approving..." : "Approve"}
+                    </Button>
+                    <Button size="sm" variant="outline" disabled={pendingHere} onClick={() => openEdit(a)}>
+                      Edit...
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      disabled={pendingHere}
+                      onClick={() => decide.mutate({ id: a.id, decision: "rejected" })}
+                    >
+                      {pendingHere && decide.variables?.decision === "rejected" ? "Rejecting..." : "Reject"}
+                    </Button>
+                  </div>
+                );
+              })()}
             </CardContent>
           </Card>
         ))}
@@ -131,7 +154,12 @@ export default function ApprovalsPage() {
 
       <Dialog open={!!editing} onClose={() => setEditing(null)} title="Edit & approve">
         <div className="space-y-3">
-          <Textarea rows={8} value={editedInputs} onChange={(e) => setEditedInputs(e.target.value)} className="font-mono text-xs" />
+          <Textarea
+            rows={8}
+            value={editedInputs}
+            onChange={(e) => setEditedInputs(e.target.value)}
+            className="font-mono text-base sm:text-xs"
+          />
           <Textarea placeholder="Note (optional)" value={note} onChange={(e) => setNote(e.target.value)} />
           <div className="flex justify-end gap-2">
             <Button variant="outline" onClick={() => setEditing(null)}>

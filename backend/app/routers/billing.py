@@ -1,11 +1,14 @@
+import asyncio
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 
-from app.db import get_db
+from app.db import get_db, run_db
 from app.models.schemas import CheckoutSessionIn, CheckoutSessionOut
 from app.security import CurrentUser, require_workspace_member
-from app.services.stripe_client import construct_webhook_event, create_checkout_session, plan_for_price_id
+import stripe as stripe_sdk
+
+from app.services.stripe_client import BillingNotConfiguredError, construct_webhook_event, create_checkout_session, plan_for_price_id
 
 router = APIRouter(prefix="/v1", tags=["billing"])
 
@@ -16,7 +19,17 @@ async def create_checkout(
 ) -> CheckoutSessionOut:
     if not user.email:
         raise HTTPException(status_code=400, detail="Account has no email on file")
-    url = create_checkout_session(workspace_id, body.plan, user.email)
+    try:
+        # stripe-python is a synchronous client under the hood.
+        url = await asyncio.to_thread(create_checkout_session, workspace_id, body.plan, user.email)
+    except BillingNotConfiguredError as exc:
+        # Without this, an unhandled exception here produces a 500 that
+        # Starlette sends without CORS headers, which the browser blocks
+        # outright — the "Upgrade" button would silently do nothing with no
+        # error ever reaching the user. See BillingNotConfiguredError's docstring.
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+    except stripe_sdk.error.StripeError as exc:
+        raise HTTPException(status_code=502, detail=f"Stripe rejected the request: {exc.user_message or str(exc)}") from exc
     return CheckoutSessionOut(checkout_url=url)
 
 
@@ -35,7 +48,7 @@ async def stripe_webhook(request: Request) -> dict:
     if event["type"] == "checkout.session.completed":
         workspace_id = obj["metadata"]["workspace_id"]
         plan = obj["metadata"]["plan"]
-        _upsert_subscription(
+        await _upsert_subscription(
             db,
             workspace_id=workspace_id,
             stripe_customer_id=obj["customer"],
@@ -50,7 +63,7 @@ async def stripe_webhook(request: Request) -> dict:
             price_id = obj["items"]["data"][0]["price"]["id"] if obj.get("items", {}).get("data") else None
             plan = plan_for_price_id(price_id) if price_id else None
             status = "active" if event["type"] == "customer.subscription.updated" and obj["status"] == "active" else "canceled"
-            _upsert_subscription(
+            await _upsert_subscription(
                 db,
                 workspace_id=workspace_id,
                 stripe_customer_id=obj["customer"],
@@ -62,7 +75,7 @@ async def stripe_webhook(request: Request) -> dict:
     return {"received": True}
 
 
-def _upsert_subscription(db, workspace_id: str, stripe_customer_id: str, stripe_subscription_id: str, plan: str | None, status: str) -> None:
+async def _upsert_subscription(db, workspace_id: str, stripe_customer_id: str, stripe_subscription_id: str, plan: str | None, status: str) -> None:
     payload = {
         "workspace_id": workspace_id,
         "stripe_customer_id": stripe_customer_id,
@@ -72,6 +85,6 @@ def _upsert_subscription(db, workspace_id: str, stripe_customer_id: str, stripe_
     }
     if plan:
         payload["plan"] = plan
-    db.table("subscriptions").upsert(payload, on_conflict="workspace_id").execute()
+    await run_db(lambda: db.table("subscriptions").upsert(payload, on_conflict="workspace_id").execute())
     if plan:
-        db.table("workspaces").update({"plan": plan}).eq("id", workspace_id).execute()
+        await run_db(lambda: db.table("workspaces").update({"plan": plan}).eq("id", workspace_id).execute())

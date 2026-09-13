@@ -13,10 +13,12 @@ const buttonVariants = cva(
         destructive: "bg-destructive text-destructive-foreground hover:opacity-90",
       },
       size: {
-        default: "h-8 px-3 py-1.5",
-        sm: "h-7 rounded px-2.5 text-[13px]",
-        lg: "h-9 rounded-md px-4",
-        icon: "h-8 w-8",
+        // Taller on mobile than desktop — comfortable tap targets on a
+        // touchscreen without inflating density on a mouse-driven desktop.
+        default: "h-10 px-3 py-1.5 sm:h-8",
+        sm: "h-9 rounded px-2.5 text-[13px] sm:h-7",
+        lg: "h-10 rounded-md px-4 sm:h-9",
+        icon: "h-10 w-10 sm:h-8 sm:w-8",
       },
     },
     defaultVariants: { variant: "default", size: "default" },

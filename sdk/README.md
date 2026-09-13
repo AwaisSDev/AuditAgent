@@ -38,13 +38,13 @@ except ApprovalTimeoutError:
 ## Shutting down cleanly
 
 Logging happens on a background thread so `track()` adds well under 5ms to
-the wrapped call. Call `audit.close()` (or at least `audit.flush()`) before
-your process exits so the last few events aren't dropped:
+the wrapped call. `AuditAgent` registers an `atexit` hook automatically, so
+queued events are flushed on normal process exit without any extra setup.
 
-```python
-import atexit
-atexit.register(audit.close)
-```
+If you want the queue drained at a specific point instead of waiting for
+exit — e.g. before a health check reports ready, or between batches in a
+long-running worker — call `audit.flush()` or `audit.close()` yourself
+(both are safe to call more than once).
 
 ## Policy
 
@@ -70,6 +70,15 @@ rules:
       action_type: data_access
       action_name: "delete_*"
     require_approval: true
+```
+
+Validate that file (schema + YAML syntax) before committing it, and check
+what a given action would resolve to under it — both run offline, no API
+key needed:
+
+```bash
+auditagent validate auditagent.policy.yaml
+auditagent check auditagent.policy.yaml --action-type external --action-name send_email
 ```
 
 ## What this does *not* do

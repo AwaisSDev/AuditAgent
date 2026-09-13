@@ -11,7 +11,7 @@ Sign-in itself still goes straight from the dashboard to Supabase Auth
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
-from app.db import get_db
+from app.db import get_db, run_db
 
 router = APIRouter(prefix="/v1/auth", tags=["auth"])
 
@@ -21,19 +21,25 @@ class SignupIn(BaseModel):
     password: str
 
 
-@router.post("/signup", status_code=201)
+@router.post("/signup", status_code=201, summary="Create an account")
 async def signup(body: SignupIn) -> dict:
+    """Creates a Supabase auth user with no email-confirmation step (this is
+    what the dashboard's "Sign up" tab calls). Sign-in afterward goes
+    straight from the dashboard to Supabase Auth, not through this API —
+    this endpoint only covers account creation."""
     if len(body.password) < 6:
         raise HTTPException(status_code=400, detail="Password must be at least 6 characters")
 
     db = get_db()
     try:
-        result = db.auth.admin.create_user(
-            {
-                "email": body.email,
-                "password": body.password,
-                "email_confirm": True,  # skip the confirmation-link step entirely
-            }
+        result = await run_db(
+            lambda: db.auth.admin.create_user(
+                {
+                    "email": body.email,
+                    "password": body.password,
+                    "email_confirm": True,  # skip the confirmation-link step entirely
+                }
+            )
         )
     except Exception as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc

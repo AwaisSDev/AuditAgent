@@ -1,6 +1,9 @@
 import type { Config } from "tailwindcss";
 
 const config: Config = {
+  // Class-based: lib/theme.ts applies/removes `dark` on <html>, defaulting
+  // to the OS/browser preference until the user picks Light/Dark explicitly
+  // in Settings (see components/settings/theme-toggle.tsx).
   darkMode: "class",
   content: ["./app/**/*.{ts,tsx}", "./components/**/*.{ts,tsx}"],
   theme: {
@@ -36,6 +39,11 @@ const config: Config = {
           DEFAULT: "hsl(var(--destructive))",
           foreground: "hsl(var(--destructive-foreground))",
         },
+        // Distinct from `destructive` (a filled button background paired
+        // with white text) — `error` is tuned only for plain text on the
+        // page background (e.g. form error messages), which needs a
+        // different lightness to hit WCAG AA contrast in each theme.
+        error: "hsl(var(--error))",
         warning: {
           DEFAULT: "hsl(var(--warning))",
           foreground: "hsl(var(--warning-foreground))",

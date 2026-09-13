@@ -94,8 +94,7 @@ docs/DEPLOYMENT.md        Env vars + how each piece ships
 # 1. backend
 cd backend
 python -m venv .venv && .venv/Scripts/activate  # or source .venv/bin/activate
-pip install -r requirements.txt
-python -m spacy download en_core_web_lg
+pip install -r requirements.txt   # includes the en_core_web_sm spaCy model as a wheel — no separate `spacy download` step needed
 cp .env.example .env   # fill in Supabase/Anthropic/Redis keys
 uvicorn app.main:app --reload            # terminal 1
 arq app.worker.worker_settings.WorkerSettings   # terminal 2 (needs Redis running locally)

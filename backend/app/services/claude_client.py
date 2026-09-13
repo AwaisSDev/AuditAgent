@@ -35,7 +35,18 @@ class DraftedAnswer(BaseModel):
 
 async def draft_answer(question: str, candidate_events: list[dict]) -> DraftedAnswer:
     settings = get_settings()
-    client = AsyncAnthropic(api_key=settings.anthropic_api_key, timeout=30.0)
+
+    if not settings.anthropic_api_key:
+        # Documented as an optional, gracefully-degrading feature (see
+        # config.py / backend/README.md) — without a key, still parse the
+        # file and match evidence, just skip the drafted wording rather than
+        # failing the whole questionnaire (worker/tasks.py::process_questionnaire
+        # wraps every question in one try/except, so one hard failure here
+        # used to abort every other question in the file too).
+        return DraftedAnswer(
+            answer="Draft generation is unavailable (no Anthropic API key configured) — please write this answer manually.",
+            cited_event_ids=[],
+        )
 
     events_for_prompt = [
         {
@@ -50,17 +61,17 @@ async def draft_answer(question: str, candidate_events: list[dict]) -> DraftedAn
 
     user_content = json.dumps({"question": question, "candidate_events": events_for_prompt})
 
-    response = await client.messages.create(
-        model=settings.anthropic_sonnet_model,
-        max_tokens=1024,
-        system=_SYSTEM_PROMPT,
-        messages=[{"role": "user", "content": user_content}],
-    )
-    text = "".join(block.text for block in response.content if block.type == "text").strip()
-    if text.startswith("```"):
-        text = text.strip("`").removeprefix("json").strip()
-
     try:
+        client = AsyncAnthropic(api_key=settings.anthropic_api_key, timeout=30.0)
+        response = await client.messages.create(
+            model=settings.anthropic_sonnet_model,
+            max_tokens=1024,
+            system=_SYSTEM_PROMPT,
+            messages=[{"role": "user", "content": user_content}],
+        )
+        text = "".join(block.text for block in response.content if block.type == "text").strip()
+        if text.startswith("```"):
+            text = text.strip("`").removeprefix("json").strip()
         parsed = json.loads(text)
         valid_ids = {e["id"] for e in candidate_events}
         cited = [eid for eid in parsed.get("cited_event_ids", []) if eid in valid_ids]
@@ -68,5 +79,13 @@ async def draft_answer(question: str, candidate_events: list[dict]) -> DraftedAn
     except (json.JSONDecodeError, KeyError):
         return DraftedAnswer(
             answer="Draft generation failed to parse — please write this answer manually.",
+            cited_event_ids=[],
+        )
+    except Exception:
+        # Same "fail closed, keep going" contract as classification.py's
+        # redact_with_llm: a transient Anthropic outage or timeout for one
+        # question must not take the rest of the questionnaire down with it.
+        return DraftedAnswer(
+            answer="Draft generation failed (a temporary error) — please write this answer manually.",
             cited_event_ids=[],
         )

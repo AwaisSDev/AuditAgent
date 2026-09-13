@@ -4,7 +4,7 @@ from fastapi import APIRouter, HTTPException, Request
 from slack_sdk.web.async_client import AsyncWebClient
 
 from app.config import get_settings
-from app.db import get_db
+from app.db import get_db, run_db
 from app.services.approvals_service import ApprovalAlreadyDecidedError, apply_decision
 from app.services.slack_verify import verify_slack_request
 
@@ -59,7 +59,9 @@ async def _handle_block_action(payload: dict) -> dict:
 
     if action_id == "edit":
         db = get_db()
-        approval = db.table("approvals").select("requested_action").eq("id", approval_id).single().execute().data
+        approval = (
+            await run_db(lambda: db.table("approvals").select("requested_action").eq("id", approval_id).single().execute())
+        ).data
         settings = get_settings()
         client = AsyncWebClient(token=settings.slack_bot_token)
         await client.views_open(

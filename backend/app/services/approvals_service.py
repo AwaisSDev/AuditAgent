@@ -38,7 +38,15 @@ async def apply_decision(
         merged = {**approval["requested_action"], **edited_action}
         update["requested_action"] = merged
 
-    updated = db.table("approvals").update(update).eq("id", approval_id).execute().data[0]
+    # Condition the UPDATE on `status = pending` so this is a single atomic
+    # compare-and-swap at the database level, not a separate check-then-act:
+    # two concurrent decisions (e.g. a Slack click racing a dashboard click)
+    # must not both succeed with the second one silently overwriting the
+    # first while both callers see a 200.
+    result = db.table("approvals").update(update).eq("id", approval_id).eq("status", "pending").execute().data
+    if not result:
+        raise ApprovalAlreadyDecidedError("Approval was already decided by someone else")
+    updated = result[0]
 
     if approval.get("slack_channel") and approval.get("slack_message_ts"):
         verb = "approved" if decision == "approved" else "rejected"

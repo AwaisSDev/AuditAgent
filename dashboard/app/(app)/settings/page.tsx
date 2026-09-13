@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
 import { Dialog } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
+import { ThemeToggle } from "@/components/settings/theme-toggle";
 import { formatDate } from "@/lib/utils";
 import type { ApiKey } from "@/lib/types";
 
@@ -23,10 +24,25 @@ export default function SettingsPage() {
   return (
     <div className="max-w-2xl space-y-6">
       <h1 className="text-2xl font-semibold tracking-tight">Settings</h1>
+      <AppearanceCard />
       <WorkspaceSettingsCard />
       <ApiKeysCard />
       <BillingCard />
     </div>
+  );
+}
+
+function AppearanceCard() {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Appearance</CardTitle>
+      </CardHeader>
+      <CardContent className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <p className="text-xs text-muted-foreground">Matches your device by default. Override it here.</p>
+        <ThemeToggle />
+      </CardContent>
+    </Card>
   );
 }
 
@@ -59,15 +75,34 @@ function WorkspaceSettingsCard() {
         </p>
         <div>
           <label className="mb-1 block text-xs font-medium">Slack channel ID</label>
-          <Input placeholder="C0123456789" value={slackChannel} onChange={(e) => setSlackChannel(e.target.value)} />
+          <Input
+            placeholder="C0123456789"
+            value={slackChannel}
+            onChange={(e) => setSlackChannel(e.target.value)}
+            autoComplete="off"
+            autoCapitalize="off"
+            autoCorrect="off"
+            spellCheck={false}
+          />
         </div>
         <div>
           <label className="mb-1 block text-xs font-medium">Fallback email</label>
-          <Input placeholder="you@company.com" value={notifyEmail} onChange={(e) => setNotifyEmail(e.target.value)} />
+          <Input
+            type="email"
+            autoComplete="email"
+            placeholder="you@company.com"
+            value={notifyEmail}
+            onChange={(e) => setNotifyEmail(e.target.value)}
+          />
         </div>
         <Button size="sm" onClick={() => save.mutate()} disabled={save.isPending}>
           Save
         </Button>
+        {save.isError && (
+          <p className="text-[13px] text-error">
+            {save.error instanceof Error ? save.error.message : "Couldn't save. Please try again."}
+          </p>
+        )}
       </CardContent>
     </Card>
   );
@@ -78,6 +113,7 @@ function ApiKeysCard() {
   const queryClient = useQueryClient();
   const [name, setName] = useState("");
   const [newKey, setNewKey] = useState<string | null>(null);
+  const [copyState, setCopyState] = useState<"idle" | "copied" | "failed">("idle");
 
   const { data: keys = [] } = useQuery({
     queryKey: ["api-keys", workspace?.id],
@@ -106,11 +142,23 @@ function ApiKeysCard() {
       </CardHeader>
       <CardContent className="space-y-3">
         <div className="flex gap-2">
-          <Input placeholder="Key name (e.g. production)" value={name} onChange={(e) => setName(e.target.value)} />
-          <Button size="sm" onClick={() => create.mutate()} disabled={!name || create.isPending}>
+          <Input
+            placeholder="Key name (e.g. production)"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            className="min-w-0 flex-1"
+          />
+          <Button size="sm" className="shrink-0" onClick={() => create.mutate()} disabled={!name || create.isPending}>
             Create key
           </Button>
         </div>
+        {(create.isError || revoke.isError) && (
+          <p className="text-[13px] text-error">
+            {(create.error ?? revoke.error) instanceof Error
+              ? ((create.error ?? revoke.error) as Error).message
+              : "Something went wrong. Please try again."}
+          </p>
+        )}
 
         <Table>
           <THead>
@@ -144,13 +192,47 @@ function ApiKeysCard() {
         </Table>
       </CardContent>
 
-      <Dialog open={!!newKey} onClose={() => setNewKey(null)} title="Your new API key">
+      <Dialog
+        open={!!newKey}
+        onClose={() => {
+          setNewKey(null);
+          setCopyState("idle");
+        }}
+        title="Your new API key"
+      >
         <p className="mb-3 text-sm text-muted-foreground">
           Copy this now. It won't be shown again. Set it as <code>AUDITAGENT_API_KEY</code>.
         </p>
-        <pre className="overflow-auto rounded-md bg-muted p-3 text-xs">{newKey}</pre>
-        <div className="mt-4 flex justify-end">
-          <Button onClick={() => setNewKey(null)}>Done</Button>
+        <pre className="overflow-auto whitespace-pre-wrap break-all rounded-md bg-muted p-3 text-xs">{newKey}</pre>
+        {copyState === "failed" && (
+          <p className="mt-1 text-[13px] text-error">Couldn't copy automatically — select the text above and copy it manually.</p>
+        )}
+        <div className="mt-4 flex justify-end gap-2">
+          <Button
+            variant="outline"
+            onClick={async () => {
+              if (!newKey) return;
+              try {
+                await navigator.clipboard.writeText(newKey);
+                setCopyState("copied");
+              } catch {
+                // Clipboard access can be denied (insecure context, browser
+                // permission, some in-app browsers) — fail visibly instead
+                // of leaving the button looking like it silently did nothing.
+                setCopyState("failed");
+              }
+            }}
+          >
+            {copyState === "copied" ? "Copied!" : "Copy"}
+          </Button>
+          <Button
+            onClick={() => {
+              setNewKey(null);
+              setCopyState("idle");
+            }}
+          >
+            Done
+          </Button>
         </div>
       </Dialog>
     </Card>
@@ -177,6 +259,11 @@ function BillingCard() {
         <p className="text-sm">
           Current plan: <Badge variant="outline">{workspace?.plan ?? "free"}</Badge>
         </p>
+        {checkout.isError && (
+          <p className="text-[13px] text-error">
+            {checkout.error instanceof Error ? checkout.error.message : "Couldn't start checkout. Please try again."}
+          </p>
+        )}
         <div className="grid gap-3 sm:grid-cols-3">
           {PLANS.map((p) => (
             <div key={p.id} className="rounded-md border border-border p-3">

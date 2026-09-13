@@ -36,15 +36,15 @@ export default function QuestionnairesPage() {
 
   return (
     <div className="space-y-5">
-      <div className="flex items-start justify-between gap-4">
-        <div className="space-y-1">
+      <div className="flex flex-col items-start gap-4 sm:flex-row sm:justify-between">
+        <div className="min-w-0 space-y-1">
           <h1 className="text-2xl font-semibold tracking-tight">Evidence packs</h1>
           <p className="text-sm text-muted-foreground">
             Upload a security questionnaire (PDF/CSV/XLSX). Claude drafts answers from your logs, citing specific
             events. You review and edit before exporting.
           </p>
         </div>
-        <div>
+        <div className="shrink-0">
           <input
             ref={fileInput}
             type="file"
@@ -61,6 +61,12 @@ export default function QuestionnairesPage() {
           </Button>
         </div>
       </div>
+
+      {upload.isError && (
+        <p className="text-[13px] text-error">
+          {upload.error instanceof Error ? upload.error.message : "Upload failed. Please try again."}
+        </p>
+      )}
 
       <Card>
         {isLoading ? (
@@ -93,7 +99,7 @@ export default function QuestionnairesPage() {
                         Review answers
                       </Link>
                     )}
-                    {q.status === "error" && <span className="text-xs text-destructive">{q.error_message}</span>}
+                    {q.status === "error" && <span className="text-xs text-error">{q.error_message}</span>}
                   </TD>
                 </TR>
               ))}

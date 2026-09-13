@@ -93,7 +93,6 @@ class PolicyOut(BaseModel):
 
 class ApprovalDecision(BaseModel):
     decision: Literal["approved", "rejected"]
-    decision_by: str
     decision_note: str | None = None
     edited_action: dict[str, Any] | None = None
 

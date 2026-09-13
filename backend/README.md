@@ -47,3 +47,13 @@ Optional, each feature degrades gracefully without it:
 | `REDIS_URL` | an external Redis; unset means the in-container one |
 
 Health check: `GET /healthz`.
+
+## Tests
+
+Pure-logic unit tests (policy engine, plan limits, API key hashing, the
+approval decision race-condition guard) run without Supabase/Redis:
+
+```bash
+pip install -r requirements-dev.txt
+pytest
+```

@@ -1,12 +1,8 @@
-import asyncio
 import hashlib
 import re
 from datetime import datetime, timezone
-from typing import Any
 
-import httpx
-
-from app.db import get_db
+from app.db import get_db, run_db as _db
 from app.services.claude_client import draft_answer
 from app.services.classification import redact_with_llm
 from app.services.email_client import send_timeout_notice
@@ -15,25 +11,6 @@ from app.services.redaction import redact_pii
 from app.services.slack_client import update_message_with_decision
 
 GENESIS_HASH = "0" * 64
-
-
-async def _db(fn, *args, attempts: int = 3, **kwargs) -> Any:
-    """Runs a blocking supabase-py call off the event loop so one slow
-    query doesn't stall every other job the worker is concurrently running.
-
-    Retries on transport-level failures (e.g. "Server disconnected"): on the
-    free Hugging Face container, a burst of concurrent jobs occasionally
-    drops the connection to Supabase's REST endpoint mid-request. That's
-    transient, not a real failure of the request itself, so it's worth a
-    couple of quick retries before letting the event fail for good.
-    """
-    for attempt in range(attempts):
-        try:
-            return await asyncio.to_thread(fn, *args, **kwargs)
-        except httpx.TransportError:
-            if attempt == attempts - 1:
-                raise
-            await asyncio.sleep(0.3 * (attempt + 1))
 
 
 def _get_or_create_agent(db, workspace_id: str, name: str) -> str:

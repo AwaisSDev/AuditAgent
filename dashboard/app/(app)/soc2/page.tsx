@@ -16,8 +16,8 @@ export default function Soc2Page() {
 
   return (
     <div className="space-y-5">
-      <div className="flex items-start justify-between gap-4">
-        <div className="space-y-1">
+      <div className="flex flex-col items-start gap-4 sm:flex-row sm:justify-between">
+        <div className="min-w-0 space-y-1">
           <h1 className="text-2xl font-semibold tracking-tight">SOC 2 control mapping</h1>
           <p className="max-w-xl text-sm text-muted-foreground">
             Which of your AuditAgent evidence already speaks to common SOC 2 controls. Not audit certification, just

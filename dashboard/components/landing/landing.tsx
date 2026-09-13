@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { ArrowUpRight, Check, Copy } from "lucide-react";
 import { Hero } from "./hero";
@@ -109,6 +109,7 @@ function Header() {
 
 function Jumplinks() {
   const [active, setActive] = useState<string | null>(null);
+  const pillRefs = useRef<Record<string, HTMLAnchorElement | null>>({});
 
   useEffect(() => {
     const els = SECTIONS.map((s) => document.getElementById(s.id)).filter(Boolean) as HTMLElement[];
@@ -124,12 +125,22 @@ function Jumplinks() {
     return () => io.disconnect();
   }, []);
 
+  useEffect(() => {
+    // The pill row scrolls horizontally on narrow screens, so the pill for
+    // whichever section is now active can end up scrolled out of view —
+    // keep it in frame instead of just changing its color off-screen.
+    if (active) pillRefs.current[active]?.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
+  }, [active]);
+
   return (
     <div className="sticky top-[var(--lp-header-h)] z-40 flex justify-center px-4 pt-4">
       <nav className="lp-jump flex max-w-full gap-1 overflow-x-auto rounded-full border border-[var(--lp-line)] bg-white px-2 py-1.5 shadow-[0_4px_16px_-8px_rgb(55_53_47/0.25)]">
         {SECTIONS.map((s) => (
           <a
             key={s.id}
+            ref={(el) => {
+              pillRefs.current[s.id] = el;
+            }}
             href={`#${s.id}`}
             className={
               "shrink-0 rounded-full px-3.5 py-1.5 text-[13.5px] font-medium transition-colors " +
@@ -171,11 +182,11 @@ function Promo({
 }) {
   return (
     <Reveal id={id} className={"scroll-mt-[140px] " + (band ? "bg-[var(--lp-band)]" : "bg-white")}>
-      <div className="mx-auto grid max-w-[1200px] items-center gap-10 px-6 py-20 md:py-28 lg:grid-cols-2 lg:gap-24">
-        <div data-fade-order="1" data-fade-media="" className={mediaLeft ? "lg:order-1" : "lg:order-2"}>
+      <div className="mx-auto grid min-w-0 max-w-[1200px] items-center gap-10 px-6 py-20 md:py-28 lg:grid-cols-2 lg:gap-24">
+        <div data-fade-order="1" data-fade-media="" className={"min-w-0 " + (mediaLeft ? "lg:order-1" : "lg:order-2")}>
           {media}
         </div>
-        <div className={"max-w-[480px] " + (mediaLeft ? "lg:order-2" : "lg:order-1")}>
+        <div className={"min-w-0 max-w-[480px] " + (mediaLeft ? "lg:order-2" : "lg:order-1")}>
           <div data-fade-order="3" className="text-[14px] font-medium uppercase tracking-[0.04em] text-[var(--lp-fg)]">
             {eyebrow}
           </div>

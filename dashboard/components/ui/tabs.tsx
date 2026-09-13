@@ -12,13 +12,13 @@ export function Tabs({
   onChange: (value: string) => void;
 }) {
   return (
-    <div className="flex gap-4 border-b border-border">
+    <div className="flex gap-4 overflow-x-auto border-b border-border">
       {tabs.map((tab) => (
         <button
           key={tab.value}
           onClick={() => onChange(tab.value)}
           className={cn(
-            "-mb-px border-b-2 px-0.5 py-2 text-[13px] font-medium transition-colors",
+            "-mb-px shrink-0 whitespace-nowrap border-b-2 px-0.5 py-2 text-[13px] font-medium transition-colors",
             active === tab.value
               ? "border-foreground text-foreground"
               : "border-transparent text-muted-foreground hover:text-foreground"

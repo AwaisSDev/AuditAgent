@@ -52,7 +52,7 @@ export function WorkspaceSwitcher() {
         className="flex w-full items-center gap-2.5 rounded-md border border-border bg-card px-2.5 py-2 text-left transition-colors hover:bg-muted"
       >
         <Avatar name={workspace.name} className="h-6 w-6 text-xs" />
-        <span className="flex-1 truncate text-sm font-medium text-foreground">{workspace.name}</span>
+        <span className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">{workspace.name}</span>
         <ChevronsUpDown className="h-4 w-4 shrink-0 text-muted-foreground" />
       </button>
 
@@ -103,6 +103,11 @@ export function WorkspaceSwitcher() {
           className="space-y-3"
         >
           <Input placeholder="Organization name" value={newName} onChange={(e) => setNewName(e.target.value)} autoFocus />
+          {create.isError && (
+            <p className="text-[13px] text-error">
+              {create.error instanceof Error ? create.error.message : "Couldn't create it. Please try again."}
+            </p>
+          )}
           <div className="flex justify-end gap-2">
             <Button type="button" variant="outline" onClick={() => setCreating(false)}>
               Cancel

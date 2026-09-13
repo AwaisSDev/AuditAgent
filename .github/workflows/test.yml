@@ -1,0 +1,86 @@
+name: Test
+
+# Runs the parts of the test suite that don't need live Supabase/Anthropic/
+# Slack/Stripe credentials: the SDK's full suite, the backend's pure-logic
+# suite (policy engine, plan limits, API-key hashing, the approval
+# race-condition guard, questionnaire parsing/export, Claude-drafting
+# fallback), the MCP server's import/tool-registration smoke check, and the
+# dashboard's typecheck + production build.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  sdk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install -e ".[dev]"
+        working-directory: sdk
+      - run: mypy auditagent
+        working-directory: sdk
+      - run: pytest -v
+        working-directory: sdk
+
+  backend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install -r requirements-dev.txt
+        working-directory: backend
+      # These tests exercise pure logic only (no live Supabase/Redis/Anthropic
+      # calls), but app/config.py's Settings still requires the two Supabase
+      # fields to be set at import time — dummy values are enough.
+      - run: pytest -v
+        working-directory: backend
+        env:
+          SUPABASE_URL: https://placeholder.supabase.co
+          SUPABASE_SERVICE_ROLE_KEY: placeholder
+
+  mcp-server:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install -e .
+        working-directory: mcp-server
+      - name: Import and verify all tools register
+        working-directory: mcp-server
+        env:
+          AUDITAGENT_API_KEY: test
+        run: |
+          python -c "from auditagent_mcp import server; tools = server.mcp._tool_manager.list_tools(); assert len(tools) == 4, tools; print('OK', [t.name for t in tools])"
+
+  dashboard:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: dashboard/package-lock.json
+      - run: npm ci
+        working-directory: dashboard
+      - run: npx tsc --noEmit
+        working-directory: dashboard
+      - name: Production build
+        working-directory: dashboard
+        env:
+          # Build-time only placeholders — never real secrets. Public env vars
+          # are baked into the client bundle at build time by Next.js, so the
+          # build needs *some* value even though nothing here is live-tested.
+          NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: placeholder
+          NEXT_PUBLIC_API_BASE_URL: https://placeholder.example.com
+        run: npm run build

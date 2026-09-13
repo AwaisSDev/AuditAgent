@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException
 
 from app.arq_pool import get_arq_pool
-from app.db import get_db
+from app.db import get_db, run_db
 from app.models.schemas import EventIn, EventIngestResponse
 from app.security import WorkspaceKeyAuth, get_api_key_auth
 from app.services.plan_limits import event_limit
@@ -26,24 +26,24 @@ async def ingest_event(
     """
     db = get_db()
 
-    ws = db.table("workspaces").select("plan").eq("id", auth.workspace_id).single().execute().data
+    ws = (await run_db(lambda: db.table("workspaces").select("plan").eq("id", auth.workspace_id).single().execute())).data
     limit = event_limit(ws["plan"])
     if limit is not None:
         month_start = datetime.now(timezone.utc).replace(day=1, hour=0, minute=0, second=0, microsecond=0).isoformat()
         used = (
-            db.table("events")
-            .select("id", count="exact")
-            .eq("workspace_id", auth.workspace_id)
-            .gte("created_at", month_start)
-            .execute()
-            .count
-            or 0
-        )
+            await run_db(
+                lambda: db.table("events")
+                .select("id", count="exact")
+                .eq("workspace_id", auth.workspace_id)
+                .gte("created_at", month_start)
+                .execute()
+            )
+        ).count or 0
         if used >= limit:
             raise HTTPException(status_code=402, detail=f"Monthly event limit reached ({limit}). Upgrade your plan to keep logging.")
 
-    intake = (
-        db.table("event_intake")
+    intake = await run_db(
+        lambda: db.table("event_intake")
         .insert(
             {
                 "workspace_id": auth.workspace_id,

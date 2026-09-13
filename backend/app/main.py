@@ -20,7 +20,35 @@ async def lifespan(app: FastAPI):
     await close_arq_pool()
 
 
-app = FastAPI(title="AuditAgent API", version="0.1.0", lifespan=lifespan)
+app = FastAPI(
+    title="AuditAgent API",
+    version="0.1.0",
+    lifespan=lifespan,
+    description="""
+Compliance infrastructure for AI agent teams — logging, human approvals,
+an immutable audit trail, and evidence-pack generation.
+
+## Authentication
+
+Two separate schemes, depending on the caller:
+
+- **SDK / API-key routes** (`/v1/events`, `/v1/approvals/request`,
+  `/v1/approvals/{approval_id}/status`, `/v1/sdk/policy`, `/v1/mcp/*`) —
+  send `Authorization: Bearer <your al_live_... key>`. Create a key from
+  the dashboard's Settings page.
+- **Dashboard / human routes** (everything under `/v1/workspaces/{id}/...`
+  except the SDK-facing ones above) — send
+  `Authorization: Bearer <Supabase session JWT>`, the same token the
+  dashboard's own browser session uses.
+
+## Where to start
+
+Most integrations only ever need the Python SDK (`pip install auditagent`)
+rather than calling this API directly — see its README for the
+`@audit.track(...)` decorator. This reference is for the SDK's own
+internals, the MCP server, or a direct integration in another language.
+""",
+)
 
 settings = get_settings()
 app.add_middleware(

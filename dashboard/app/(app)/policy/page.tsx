@@ -87,7 +87,7 @@ export default function PolicyPage() {
                 <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-muted">
                   <Icon className="h-4 w-4 text-muted-foreground" strokeWidth={1.75} />
                 </div>
-                <div className="flex-1">
+                <div className="min-w-0 flex-1">
                   <p className="text-[15px] font-semibold text-foreground">{def.label}</p>
                   <p className="text-sm text-muted-foreground">{def.description}</p>
                 </div>
@@ -112,7 +112,7 @@ export default function PolicyPage() {
             <Check className="h-3.5 w-3.5" /> Saved
           </span>
         )}
-        {error && <span className="text-destructive">{error}</span>}
+        {error && <span className="text-error">{error}</span>}
       </div>
 
       {hasCustomRules && (
@@ -143,7 +143,7 @@ export default function PolicyPage() {
             <textarea
               rows={12}
               spellCheck={false}
-              className="block w-full resize-none border-0 bg-card p-4 font-mono text-[13px] leading-relaxed text-foreground outline-none"
+              className="block w-full resize-none border-0 bg-card p-4 font-mono text-base leading-relaxed text-foreground outline-none sm:text-[13px]"
               value={draft}
               onChange={(e) => setDraft(e.target.value)}
             />
