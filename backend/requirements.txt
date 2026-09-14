@@ -21,6 +21,7 @@ python-docx==1.1.2
 openpyxl==3.1.5
 pypdf==5.0.1
 resend==2.4.0
+auditagent-mcp>=0.2.0,<0.3.0  # F6 MCP server, mounted at /mcp (see app/main.py) for remote/multi-tenant reach (ChatGPT, Grok, claude.ai) alongside the existing stdio-local install
 # spaCy model as a wheel so plain `pip install -r` (Hugging Face Spaces) gets
 # it without a separate `spacy download` step.
 en_core_web_sm @ https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.7.1/en_core_web_sm-3.7.1-py3-none-any.whl

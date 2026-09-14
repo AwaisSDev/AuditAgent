@@ -324,9 +324,9 @@ export function Landing() {
         <Promo
           id="mcp"
           eyebrow="MCP"
-          title="Ask Claude about your audit trail."
-          body="Connect AuditAgent to Claude and just ask: anything waiting on me? What did the billing agent do last night? It reads the same record as the dashboard, and it can only read."
-          cta={{ label: "Set up the MCP server", href: DOCS_URL }}
+          title="Ask Claude, ChatGPT, or Grok about your audit trail."
+          body="Connect AuditAgent to Claude, ChatGPT, or Grok and just ask: anything waiting on me? What did the billing agent do last night? It reads the same record as the dashboard, and it can only read."
+          cta={{ label: "Set up the MCP server", href: `${DOCS_URL}#mcp` }}
           media={<McpArt />}
           mediaLeft
           band

@@ -1,5 +1,6 @@
 from contextlib import asynccontextmanager
 
+from auditagent_mcp.server import http_app as mcp_http_app
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -71,6 +72,15 @@ app.include_router(billing.router)
 app.include_router(slack.router)
 app.include_router(soc2.router)
 app.include_router(mcp_data.router)
+
+# F6, remote/multi-tenant: exposes the same four tools as mcp_data.router
+# over MCP's Streamable HTTP transport instead of plain REST, so claude.ai,
+# ChatGPT, and Grok's custom-connector flows can reach it (none of them can
+# reach a stdio-only server — see docs/PRODUCTION_READINESS.md). Each
+# caller authenticates with their own AuditAgent API key as the bearer
+# token; nothing server-wide is shared between callers (see
+# auditagent_mcp.server._BearerTokenMiddleware).
+app.mount("/mcp", mcp_http_app())
 
 
 @app.get("/healthz")

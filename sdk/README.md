@@ -1,4 +1,4 @@
-# audagent
+# AuditAgent
 
 Drop-in logging, human approvals, and compliance evidence for AI agents.
 

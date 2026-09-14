@@ -18,14 +18,16 @@ function Code({ children }: { children: string }) {
 function Section({
   step,
   title,
+  id,
   children,
 }: {
   step: number;
   title: string;
+  id?: string;
   children: React.ReactNode;
 }) {
   return (
-    <section className="border-t border-border py-8 first:border-t-0 first:pt-0">
+    <section id={id} className="scroll-mt-8 border-t border-border py-8 first:border-t-0 first:pt-0">
       <div className="flex items-baseline gap-3">
         <span className="text-sm font-medium text-muted-foreground">{step}</span>
         <h2 className="text-lg font-semibold tracking-tight">{title}</h2>
@@ -139,11 +141,40 @@ def send_refund(customer_id: str, amount_cents: int):
               before making that claim externally.
             </p>
           </Section>
+
+          <Section step={8} id="mcp" title="Ask Claude, ChatGPT, or Grok about your audit trail">
+            <p>
+              AuditAgent also runs as an MCP server, so you can ask an AI assistant things like
+              &ldquo;anything waiting on me?&rdquo; or &ldquo;what did the billing agent do last
+              night?&rdquo; directly. It reads the same record as the dashboard, and it can only read.
+              Two ways to connect, depending on which assistant:
+            </p>
+            <p>
+              <strong>Claude.ai, ChatGPT, or Grok</strong> (hosted, no install): these run in the browser
+              with no local machine to install anything on, so they connect to AuditAgent&apos;s own
+              hosted MCP endpoint instead. Add a custom connector pointing at your deployed
+              backend&apos;s <code>/mcp</code> path, using your AuditAgent API key as the bearer token
+              when prompted.
+            </p>
+            <p>
+              <strong>Claude Desktop or Claude Code</strong> (local): these run as a process on your own
+              machine, so they can run the server directly:
+            </p>
+            <Code>{`pip install auditagent-mcp`}</Code>
+            <Code>{`{
+  "mcpServers": {
+    "auditagent": {
+      "command": "auditagent-mcp",
+      "env": { "AUDITAGENT_API_KEY": "al_live_..." }
+    }
+  }
+}`}</Code>
+          </Section>
         </div>
 
         <div className="mt-4 border-t border-border pt-8 text-[15px] text-muted-foreground">
           <p>
-            The SDK also ships an offline <code>auditagent</code> CLI for validating a policy file before
+            The SDK also ships an offline <code>audagent</code> CLI for validating a policy file before
             it ships, and supports async functions the same way as sync ones. Stuck on something not
             covered here? Email{" "}
             <a href="mailto:support@auditagent.dev" className="text-foreground underline underline-offset-2">
