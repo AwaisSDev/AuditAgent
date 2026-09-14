@@ -5,7 +5,7 @@ name: Test
 # (every router/service, 97%+ line coverage, all against an in-memory fake
 # database), the MCP server's suite (its HTTP client against a mocked
 # transport, tool registration/argument-forwarding), and the dashboard's
-# typecheck + production build.
+# typecheck + unit tests (Vitest, pure-logic modules) + production build.
 
 on:
   push:
@@ -71,6 +71,8 @@ jobs:
       - run: npm ci
         working-directory: dashboard
       - run: npx tsc --noEmit
+        working-directory: dashboard
+      - run: npm test
         working-directory: dashboard
       - name: Production build
         working-directory: dashboard
