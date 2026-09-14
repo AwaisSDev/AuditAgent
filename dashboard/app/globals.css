@@ -33,6 +33,10 @@
   --ring: 45 8% 20%;
   --skeleton: 40 9% 83%;
   --skeleton-shine: 40 10% 91%;
+  /* A dark, low-opacity shadow reads fine here: --card and --background are
+     both near-white, so the shadow itself is the only separation cue. */
+  --shadow-subtle: 0 1px 2px 0 rgb(55 53 47 / 0.06);
+  --shadow-popover: 0 4px 12px 0 rgb(55 53 47 / 0.1), 0 0 0 1px rgb(55 53 47 / 0.06);
 }
 
 /* lib/theme.ts applies this class to <html> — defaulting to the OS/browser
@@ -42,7 +46,12 @@
 .dark {
   --background: 30 3% 10%;
   --foreground: 40 5% 92%;
-  --card: 30 3% 12%;
+  /* A few points lighter than the original 12% -- against a 10% page
+     background that was too close to read as a distinct raised surface,
+     especially once the shadow below (which reads fine in light mode, since
+     a dark shadow on a near-white page is the whole separation cue) goes
+     essentially invisible against an already-dark page. */
+  --card: 30 4% 16%;
   --sidebar: 30 4% 13%;
   --border: 40 4% 22%;
   --muted: 40 3% 17%;
@@ -65,6 +74,12 @@
   --ring: 40 5% 80%;
   --skeleton: 40 4% 26%;
   --skeleton-shine: 40 4% 34%;
+  /* A dark shadow is invisible against an already-dark page -- the
+     separation cue here has to come from a light edge highlight instead
+     (the classic dark-UI "elevated surface" trick), plus a soft dark
+     ambient shadow underneath for actual depth/grounding. */
+  --shadow-subtle: 0 0 0 1px rgb(255 255 255 / 0.06), 0 2px 6px 0 rgb(0 0 0 / 0.3);
+  --shadow-popover: 0 0 0 1px rgb(255 255 255 / 0.08), 0 8px 24px 0 rgb(0 0 0 / 0.45);
 }
 
 body {

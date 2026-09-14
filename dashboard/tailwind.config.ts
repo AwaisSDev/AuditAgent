@@ -59,8 +59,12 @@ const config: Config = {
         sm: "4px",
       },
       boxShadow: {
-        subtle: "0 1px 2px 0 rgb(55 53 47 / 0.06)",
-        popover: "0 4px 12px 0 rgb(55 53 47 / 0.1), 0 0 0 1px rgb(55 53 47 / 0.06)",
+        // Defined as CSS variables (globals.css) rather than fixed values --
+        // a dark shadow that reads correctly against a near-white page is
+        // invisible against a near-black one, so dark mode needs a
+        // different shadow, not just the same one at a different opacity.
+        subtle: "var(--shadow-subtle)",
+        popover: "var(--shadow-popover)",
       },
     },
   },

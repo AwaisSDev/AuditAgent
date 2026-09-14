@@ -50,9 +50,8 @@ export default function LoginPage() {
     <div className="flex min-h-screen items-center justify-center bg-sidebar px-4">
       <div className="w-full max-w-[360px]">
         <div className="mb-6 flex flex-col items-center text-center">
-          <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-md bg-primary text-sm font-semibold text-primary-foreground">
-            A
-          </div>
+          {/* eslint-disable-next-line @next/next/no-img-element -- next/image's optimizer (sharp) fails on this PNG */}
+          <img src="/logo.png" alt="" width={36} height={36} className="mb-3 rounded-md" />
           <h1 className="text-lg font-semibold tracking-tight">
             {mode === "signin" ? "Log in to AuditAgent" : "Create your AuditAgent account"}
           </h1>

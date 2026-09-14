@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { History, CircleCheck, FileText, ShieldCheck, BadgeCheck, Settings, LogOut, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { createSupabaseBrowserClient } from "@/lib/supabase-browser";
@@ -18,12 +18,18 @@ const NAV_ITEMS = [
 
 export function Sidebar({ open, onClose }: { open?: boolean; onClose?: () => void }) {
   const pathname = usePathname();
-  const router = useRouter();
   const supabase = createSupabaseBrowserClient();
 
   async function signOut() {
     await supabase.auth.signOut();
-    router.push("/login");
+    // A full navigation, not router.push: middleware reads the session
+    // cookie on every request, and a client-side push can race the
+    // just-cleared cookie against Next's own router cache. If that
+    // happens, middleware still sees a session, treats /login as
+    // already-authed, and bounces straight back to /dashboard, so sign
+    // out silently does nothing. A hard navigation always sends a fresh
+    // request with the real, post-signOut cookie state.
+    window.location.href = "/login";
   }
 
   return (
@@ -38,9 +44,11 @@ export function Sidebar({ open, onClose }: { open?: boolean; onClose?: () => voi
         )}
       >
         <div className="flex items-center gap-2.5 px-4 pb-4 pt-5">
-          {/* eslint-disable-next-line @next/next/no-img-element -- next/image's optimizer (sharp) fails on this PNG */}
-          <img src="/logo.png" alt="" width={26} height={26} className="shrink-0" />
-          <span className="flex-1 text-base font-semibold tracking-tight text-foreground">AuditAgent</span>
+          <Link href="/" className="flex flex-1 items-center gap-2.5 overflow-hidden">
+            {/* eslint-disable-next-line @next/next/no-img-element -- next/image's optimizer (sharp) fails on this PNG */}
+            <img src="/logo.png" alt="" width={26} height={26} className="shrink-0" />
+            <span className="text-base font-semibold tracking-tight text-foreground">AuditAgent</span>
+          </Link>
           <button onClick={onClose} aria-label="Close menu" className="rounded-md p-1 text-muted-foreground hover:bg-muted md:hidden">
             <X className="h-5 w-5" />
           </button>

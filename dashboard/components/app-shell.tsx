@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { Menu } from "lucide-react";
 import { useWorkspace } from "@/lib/workspace-context";
 import { Sidebar } from "@/components/nav/sidebar";
@@ -54,9 +55,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           >
             <Menu className="h-5 w-5" />
           </button>
-          {/* eslint-disable-next-line @next/next/no-img-element -- next/image's optimizer (sharp) fails on this PNG */}
-          <img src="/logo.png" alt="" width={20} height={20} />
-          <span className="text-sm font-semibold">AuditAgent</span>
+          <Link href="/" className="flex items-center gap-2">
+            {/* eslint-disable-next-line @next/next/no-img-element -- next/image's optimizer (sharp) fails on this PNG */}
+            <img src="/logo.png" alt="" width={20} height={20} />
+            <span className="text-sm font-semibold">AuditAgent</span>
+          </Link>
         </div>
 
         <main className="flex-1 overflow-y-auto md:h-screen">
