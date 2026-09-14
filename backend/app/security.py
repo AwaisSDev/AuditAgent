@@ -85,13 +85,18 @@ def generate_api_key() -> tuple[str, str, str]:
     return full_key, prefix, hash_api_key(full_key)
 
 
-async def get_api_key_auth(authorization: str | None = Header(default=None)) -> WorkspaceKeyAuth:
-    """Auth for the SDK ingest endpoint: `Authorization: Bearer <api_key>`."""
-    if not authorization or not authorization.lower().startswith("bearer "):
-        raise _unauthorized("Missing API key")
-    api_key = authorization.split(" ", 1)[1].strip()
+async def verify_api_key(api_key: str) -> WorkspaceKeyAuth | None:
+    """The actual validation behind get_api_key_auth, factored out so
+    anything else that receives a bearer token from a non-HTTP-header
+    source can reuse the exact same check rather than re-implementing it
+    -- see services/mcp_oauth_provider.py's load_access_token, which
+    verifies the *same* API keys when a caller connects to the MCP server
+    via a manually-pasted key instead of the OAuth flow. Returns None
+    (never raises) on any failure, so callers decide their own error
+    handling instead of inheriting an HTTPException shaped for this
+    module's own FastAPI dependency use."""
     if "_" not in api_key:
-        raise _unauthorized("Malformed API key")
+        return None
 
     prefix = "_".join(api_key.split("_")[:3])  # al_live_xxxxxxxx
     key_hash = hash_api_key(api_key)
@@ -105,13 +110,13 @@ async def get_api_key_auth(authorization: str | None = Header(default=None)) -> 
         .execute()
     )
     if not res.data:
-        raise _unauthorized("Invalid API key")
+        return None
 
     row = res.data[0]
     if row["revoked_at"] is not None:
-        raise _unauthorized("API key revoked")
+        return None
     if not secrets.compare_digest(row["key_hash"], key_hash):
-        raise _unauthorized("Invalid API key")
+        return None
 
     await run_db(
         lambda: db.table("api_keys")
@@ -121,3 +126,14 @@ async def get_api_key_auth(authorization: str | None = Header(default=None)) -> 
     )
 
     return WorkspaceKeyAuth(workspace_id=row["workspace_id"], api_key_id=row["id"])
+
+
+async def get_api_key_auth(authorization: str | None = Header(default=None)) -> WorkspaceKeyAuth:
+    """Auth for the SDK ingest endpoint: `Authorization: Bearer <api_key>`."""
+    if not authorization or not authorization.lower().startswith("bearer "):
+        raise _unauthorized("Missing API key")
+    api_key = authorization.split(" ", 1)[1].strip()
+    auth = await verify_api_key(api_key)
+    if auth is None:
+        raise _unauthorized("Invalid API key")
+    return auth

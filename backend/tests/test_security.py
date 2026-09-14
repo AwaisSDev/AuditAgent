@@ -252,6 +252,40 @@ async def test_get_api_key_auth_rejects_a_prefix_match_with_wrong_secret(monkeyp
     assert exc.value.status_code == 401
 
 
+# -- verify_api_key ------------------------------------------------------------
+#
+# get_api_key_auth's own tests above already cover this indirectly (it's
+# the function get_api_key_auth delegates to), but this is also called
+# directly from a non-HTTP-header context (services/mcp_oauth_provider.py's
+# load_access_token, for an MCP client that pastes an existing key instead
+# of using the OAuth flow), so its "return None, don't raise" contract
+# gets its own direct coverage.
+
+
+@pytest.mark.anyio
+async def test_verify_api_key_returns_none_rather_than_raising_on_failure(monkeypatch):
+    from app.security import verify_api_key
+
+    monkeypatch.setattr("app.security.get_db", lambda: _FakeApiKeyDb([]))
+    assert await verify_api_key("not-even-key-shaped") is None
+    assert await verify_api_key("al_live_unknown_prefix_wontmatch") is None
+
+
+@pytest.mark.anyio
+async def test_verify_api_key_returns_the_workspace_auth_for_a_valid_key(monkeypatch):
+    from app.security import verify_api_key
+
+    full_key, prefix, key_hash = generate_api_key()
+    row = {"id": "key-1", "workspace_id": "ws-1", "revoked_at": None, "key_hash": key_hash, "key_prefix": prefix}
+    monkeypatch.setattr("app.security.get_db", lambda: _FakeApiKeyDb([row]))
+
+    auth = await verify_api_key(full_key)
+
+    assert auth is not None
+    assert auth.workspace_id == "ws-1"
+    assert auth.api_key_id == "key-1"
+
+
 @pytest.mark.anyio
 async def test_get_api_key_auth_accepts_a_valid_key_and_updates_last_used(monkeypatch):
     full_key, prefix, key_hash = generate_api_key()

@@ -1,12 +1,13 @@
 from contextlib import asynccontextmanager
 
-from auditagent_mcp.server import http_app as mcp_http_app
+from auditagent_mcp.server import configure_oauth, http_app as mcp_http_app
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.arq_pool import close_arq_pool, get_arq_pool
 from app.config import get_settings
-from app.routers import agents, approvals, auth, billing, events, ingest, mcp_data, policies, questionnaires, slack, soc2, workspaces
+from app.routers import agents, approvals, auth, billing, events, ingest, mcp_data, oauth, policies, questionnaires, slack, soc2, workspaces
+from app.services.mcp_oauth_provider import get_oauth_provider
 
 
 @asynccontextmanager
@@ -72,17 +73,42 @@ app.include_router(billing.router)
 app.include_router(slack.router)
 app.include_router(soc2.router)
 app.include_router(mcp_data.router)
-
-# F6, remote/multi-tenant: exposes the same four tools as mcp_data.router
-# over MCP's Streamable HTTP transport instead of plain REST, so claude.ai,
-# ChatGPT, and Grok's custom-connector flows can reach it (none of them can
-# reach a stdio-only server — see docs/PRODUCTION_READINESS.md). Each
-# caller authenticates with their own AuditAgent API key as the bearer
-# token; nothing server-wide is shared between callers (see
-# auditagent_mcp.server._BearerTokenMiddleware).
-app.mount("/mcp", mcp_http_app())
+app.include_router(oauth.router)
 
 
 @app.get("/healthz")
 async def healthz() -> dict:
     return {"status": "ok"}
+
+
+# F6, remote/multi-tenant: exposes the same four tools as mcp_data.router
+# over MCP's Streamable HTTP transport instead of plain REST, so claude.ai,
+# ChatGPT, and Grok's custom-connector flows can reach it (none of them can
+# reach a stdio-only server — see docs/PRODUCTION_READINESS.md). A caller
+# can authenticate either way: paste an existing AuditAgent API key
+# directly as the bearer token (still works, unchanged), or go through the
+# real OAuth flow below, which a plain static token can't offer -- some
+# clients' own "Connect" buttons (Claude Code's, notably) only know how to
+# do OAuth and have no field to paste a token into at all. Either way ends
+# up authenticated as a real, revokable API key, checked the same way.
+configure_oauth(
+    get_oauth_provider(),
+    issuer_url=settings.app_base_url,
+    resource_server_url=f"{settings.app_base_url}/mcp",
+)
+# Mounted at "/" (not "/mcp"), and registered LAST so every route above
+# always wins first: the OAuth discovery/registration/authorize/token
+# routes this generates (see configure_oauth) are only correct at
+# predictable, often-root-relative paths -- RFC 9728's well-known
+# protected-resource path in particular is defined relative to the
+# origin's root, not to whatever sub-path the resource itself lives
+# under. Mounting the whole thing under "/mcp" instead would nest every
+# one of those paths an extra level (discovered as
+# /mcp/.well-known/oauth-protected-resource/mcp, /mcp/authorize, etc.)
+# while the auto-generated metadata still advertises the un-nested
+# versions -- confirmed by actually running the full discovery ->
+# registration -> authorize -> token exchange handshake and watching it
+# 404 before this fix. The actual MCP protocol endpoint itself still ends
+# up at exactly "/mcp" (see streamable_http_path in auditagent_mcp/server.py),
+# same external URL as before -- only the OAuth routes' position changes.
+app.mount("/", mcp_http_app())
