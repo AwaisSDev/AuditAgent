@@ -3,7 +3,7 @@ import io
 import openpyxl
 from pypdf import PdfWriter
 
-from app.services.questionnaire_parser import parse_csv, parse_pdf, parse_xlsx, parse_questionnaire
+from app.services.questionnaire_parser import _looks_like_question, parse_csv, parse_pdf, parse_xlsx, parse_questionnaire
 
 
 def test_parse_csv_with_question_column():
@@ -84,3 +84,44 @@ def test_parse_questionnaire_rejects_unsupported_type():
 
     with pytest.raises(ValueError):
         parse_questionnaire(b"", "docx")
+
+
+def test_parse_questionnaire_dispatches_to_xlsx():
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.append(["Question"])
+    ws.append(["Do you log all AI agent actions?"])
+    buf = io.BytesIO()
+    wb.save(buf)
+
+    assert parse_questionnaire(buf.getvalue(), "xlsx") == ["Do you log all AI agent actions?"]
+
+
+def test_parse_xlsx_empty_workbook_returns_empty_list():
+    wb = openpyxl.Workbook()
+    buf = io.BytesIO()
+    wb.save(buf)
+    # A brand-new workbook still has one blank row from openpyxl's default
+    # sheet, which iter_rows still yields -- covers the "has rows, but no
+    # data" path distinctly from a workbook with zero rows at all.
+    assert parse_xlsx(buf.getvalue()) == []
+
+
+def test_looks_like_question_rejects_short_lines():
+    assert _looks_like_question("Yes.") is False
+
+
+def test_looks_like_question_accepts_a_line_ending_in_a_question_mark():
+    assert _looks_like_question("Do you log all AI agent actions?") is True
+
+
+def test_looks_like_question_accepts_a_numbered_list_item():
+    assert _looks_like_question("1. Describe your data retention policy") is True
+
+
+def test_looks_like_question_accepts_a_lettered_list_item():
+    assert _looks_like_question("a) Describe your incident response plan") is True
+
+
+def test_looks_like_question_rejects_ordinary_prose():
+    assert _looks_like_question("This is just a regular sentence with no marker") is False

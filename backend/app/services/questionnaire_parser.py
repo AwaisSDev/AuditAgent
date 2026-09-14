@@ -6,9 +6,12 @@ answers ship (see F4: "never auto-submits")."""
 
 import csv
 import io
+import re
 
 import openpyxl
 from pypdf import PdfReader
+
+_NUMBERED_MARKER = re.compile(r"^\d{1,3}[.)]")
 
 
 def _looks_like_question(line: str) -> bool:
@@ -17,8 +20,15 @@ def _looks_like_question(line: str) -> bool:
         return False
     if line.endswith("?"):
         return True
-    # numbered/lettered list items are common in questionnaire exports
-    return bool(line[:3].rstrip(".)").isdigit() or (len(line) > 2 and line[1] in ").:" and line[0].isalpha()))
+    # numbered/lettered list items are common in questionnaire exports. A
+    # trailing space after the marker (the overwhelmingly common style --
+    # "1. Do you...", "2) Have you...") must still match, which a bare
+    # `line[:3].rstrip(".)").isdigit()` check does not: rstrip only strips
+    # "." and ")" characters, so a marker like "1. " (ending in a space)
+    # is left untouched and never reads as a digit.
+    if _NUMBERED_MARKER.match(line):
+        return True
+    return len(line) > 2 and line[1] in ").:" and line[0].isalpha()
 
 
 def parse_pdf(content: bytes) -> list[str]:
