@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Menu } from "lucide-react";
+import { restoreStoredTheme } from "@/lib/theme";
 import { useWorkspace } from "@/lib/workspace-context";
 import { Sidebar } from "@/components/nav/sidebar";
 import { CreateWorkspace } from "@/components/onboarding/create-workspace";
@@ -38,6 +39,14 @@ function AppShellSkeleton() {
 export function AppShell({ children }: { children: React.ReactNode }) {
   const { workspaces, isLoading } = useWorkspace();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+
+  // Client-side navigation (next/link) never re-runs the theme-init
+  // script, so arriving here from a forced-always-light page (landing,
+  // /docs) would otherwise leave <html> without the `dark` class even
+  // though the user's actual stored/system preference is dark.
+  useEffect(() => {
+    restoreStoredTheme();
+  }, []);
 
   if (isLoading) return <AppShellSkeleton />;
   if (workspaces.length === 0) return <CreateWorkspace />;

@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { ArrowUpRight, Check, Copy } from "lucide-react";
+import { forceLightTheme } from "@/lib/theme";
 import { Hero } from "./hero";
 import { Reveal } from "./reveal";
 import {
@@ -256,6 +257,10 @@ function InstallCard() {
 /* ---------- page ---------- */
 
 export function Landing() {
+  useEffect(() => {
+    forceLightTheme();
+  }, []);
+
   return (
     <div className="lp min-h-screen">
       <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />

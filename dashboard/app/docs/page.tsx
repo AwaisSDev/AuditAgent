@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { ForceLightTheme } from "@/components/force-light-theme";
 
 export const metadata: Metadata = {
   title: "Docs",
@@ -42,6 +43,7 @@ function Section({
 export default function DocsPage() {
   return (
     <div className="min-h-screen bg-background text-foreground">
+      <ForceLightTheme />
       <header className="border-b border-border">
         <div className="mx-auto flex max-w-[720px] items-center justify-between px-6 py-4">
           <Link href="/" className="flex items-center gap-2">
