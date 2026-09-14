@@ -80,7 +80,7 @@ async def test_get_current_user_accepts_a_valid_hs256_token(monkeypatch):
 @pytest.mark.anyio
 async def test_get_current_user_rejects_a_token_signed_with_the_wrong_secret(monkeypatch):
     monkeypatch.setattr("app.security.get_settings", lambda: _settings())
-    token = jwt.encode({"sub": "user-1", "aud": "authenticated"}, "wrong-secret", algorithm="HS256")
+    token = jwt.encode({"sub": "user-1", "aud": "authenticated"}, "a-different-32-byte-wrong-secret!", algorithm="HS256")
 
     with pytest.raises(HTTPException) as exc:
         await get_current_user(authorization=f"Bearer {token}")
