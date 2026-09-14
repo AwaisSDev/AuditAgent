@@ -170,3 +170,44 @@ def test_export_csv_route_is_not_shadowed_by_the_event_id_route(client, fake_db)
     assert resp.headers["content-type"].startswith("text/csv")
     assert "attachment" in resp.headers["content-disposition"]
     assert "evt-1" in resp.text
+
+
+def test_list_events_filters_by_agent_and_action_type_and_date_range(client, fake_db):
+    fake_db._tables["events"] = {
+        e["id"]: e
+        for e in (
+            _event(id="evt-match", agent_id="agent-1", action_type="external", created_at="2026-02-15T00:00:00+00:00"),
+            _event(id="evt-wrong-agent", agent_id="agent-2", action_type="external", created_at="2026-02-15T00:00:00+00:00"),
+            _event(id="evt-wrong-type", agent_id="agent-1", action_type="internal", created_at="2026-02-15T00:00:00+00:00"),
+            _event(id="evt-too-old", agent_id="agent-1", action_type="external", created_at="2026-01-01T00:00:00+00:00"),
+            _event(id="evt-too-new", agent_id="agent-1", action_type="external", created_at="2026-03-01T00:00:00+00:00"),
+        )
+    }
+
+    resp = client.get(
+        f"/v1/workspaces/{WORKSPACE_ID}/events",
+        params={
+            "agent_id": "agent-1",
+            "action_type": "external",
+            "since": "2026-02-01T00:00:00+00:00",
+            "until": "2026-02-28T00:00:00+00:00",
+        },
+    )
+    assert resp.status_code == 200
+    ids = [e["id"] for e in resp.json()]
+    assert ids == ["evt-match"]
+
+
+def test_export_csv_respects_the_same_filters(client, fake_db):
+    fake_db._tables["events"] = {
+        e["id"]: e
+        for e in (
+            _event(id="evt-match", status="completed"),
+            _event(id="evt-excluded", status="rejected"),
+        )
+    }
+
+    resp = client.get(f"/v1/workspaces/{WORKSPACE_ID}/events/export.csv", params={"status": "completed"})
+    assert resp.status_code == 200
+    assert "evt-match" in resp.text
+    assert "evt-excluded" not in resp.text
