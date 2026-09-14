@@ -1,6 +1,6 @@
 import pytest
 
-from auditagent.cli import PolicyValidationError, main, validate_policy_yaml
+from audagent.cli import PolicyValidationError, main, validate_policy_yaml
 
 VALID_YAML = """
 rules:

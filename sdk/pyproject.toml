@@ -3,12 +3,13 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-# PyPI rejected "auditagent" as too similar to an already-registered
-# project ("audit-agent"); the import name/module (`auditagent`, below)
-# and the CLI command (`auditagent`, see [project.scripts]) are unchanged
-# -- only the `pip install` name differs from the import name.
+# PyPI rejected "auditagent" as too similar to an already-registered,
+# unrelated project ("audit-agent"). Renamed the package/module/CLI to
+# "audagent" everywhere (not just the PyPI listing name) for one
+# consistent name instead of a confusing split between what you `pip
+# install` and what you `import`.
 name = "AudAgent"
-version = "0.1.0"
+version = "0.2.0"
 description = "Drop-in logging, human approvals, and compliance evidence for AI agents."
 readme = "README.md"
 requires-python = ">=3.9"
@@ -39,10 +40,10 @@ Homepage = "https://auditagent.dev"
 Documentation = "https://auditagent.dev/docs"
 
 [project.scripts]
-auditagent = "auditagent.cli:main"
+audagent = "audagent.cli:main"
 
 [tool.hatch.build.targets.wheel]
-packages = ["auditagent"]
+packages = ["audagent"]
 
 [tool.mypy]
 # The installed mypy version no longer emulates 3.9 itself; the package

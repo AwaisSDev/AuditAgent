@@ -28,7 +28,7 @@ pip install AudAgent
 ```
 
 ```python
-from auditagent import AuditAgent
+from audagent import AuditAgent
 
 audit = AuditAgent(api_key="AUDITAGENT_API_KEY", agent_name="billing-bot")
 
@@ -96,7 +96,7 @@ externally.
 ## Where to go next
 
 - [`sdk/README.md`](../sdk/README.md) — full SDK reference (async support,
-  the CLI's `auditagent validate`/`check` commands for testing policy YAML
+  the CLI's `audagent validate`/`check` commands for testing policy YAML
   offline, error handling).
 - [`SUPPORT.md`](../SUPPORT.md) — how to reach us and what to expect.
 - Stuck on something this doc doesn't cover? See Support below — that's

@@ -1,4 +1,4 @@
-# auditagent
+# audagent
 
 Drop-in logging, human approvals, and compliance evidence for AI agents.
 
@@ -7,7 +7,7 @@ pip install AudAgent
 ```
 
 ```python
-from auditagent import AuditAgent
+from audagent import AuditAgent
 
 audit = AuditAgent(api_key="al_live_...", agent_name="support-bot")
 
@@ -25,7 +25,7 @@ external`, the call blocks until a human approves/rejects/edits it in Slack
 ## Handling rejections
 
 ```python
-from auditagent import ApprovalDeniedError, ApprovalTimeoutError
+from audagent import ApprovalDeniedError, ApprovalTimeoutError
 
 try:
     await send_email("customer@example.com", "Refund approved", "...")
@@ -77,8 +77,8 @@ what a given action would resolve to under it — both run offline, no API
 key needed:
 
 ```bash
-auditagent validate auditagent.policy.yaml
-auditagent check auditagent.policy.yaml --action-type external --action-name send_email
+audagent validate auditagent.policy.yaml
+audagent check auditagent.policy.yaml --action-type external --action-name send_email
 ```
 
 ## What this does *not* do

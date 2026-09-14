@@ -1,4 +1,4 @@
-from auditagent.exceptions import ApprovalDeniedError, ApprovalTimeoutError
+from audagent.exceptions import ApprovalDeniedError, ApprovalTimeoutError
 
 
 def test_approval_denied_error_message_includes_reviewer_and_note():

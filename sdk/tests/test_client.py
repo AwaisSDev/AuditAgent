@@ -6,9 +6,9 @@ from unittest.mock import MagicMock, patch
 import httpx
 import pytest
 
-from auditagent.client import AuditAgent
-from auditagent.exceptions import ApprovalDeniedError, ApprovalTimeoutError
-from auditagent.policy import DEFAULT_POLICY_YAML
+from audagent.client import AuditAgent
+from audagent.exceptions import ApprovalDeniedError, ApprovalTimeoutError
+from audagent.policy import DEFAULT_POLICY_YAML
 
 
 def _make_agent(monkeypatch):
@@ -101,7 +101,7 @@ def test_close_is_idempotent(monkeypatch):
 
 def test_fetch_policy_falls_back_to_default_on_a_network_error(monkeypatch):
     monkeypatch.setattr(atexit, "register", lambda fn: None)
-    with patch("auditagent.client.httpx.get", side_effect=httpx.ConnectError("no network")):
+    with patch("audagent.client.httpx.get", side_effect=httpx.ConnectError("no network")):
         agent = AuditAgent(api_key="test", agent_name="test-agent")
 
     # DEFAULT_POLICY_YAML requires approval for any "external" action.

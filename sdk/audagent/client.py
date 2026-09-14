@@ -12,9 +12,9 @@ from typing import Any, Callable, TypeVar
 
 import httpx
 
-from auditagent.exceptions import ApprovalDeniedError, ApprovalTimeoutError
-from auditagent.hashing import hash_prompt
-from auditagent.policy import Policy
+from audagent.exceptions import ApprovalDeniedError, ApprovalTimeoutError
+from audagent.hashing import hash_prompt
+from audagent.policy import Policy
 
 F = TypeVar("F", bound=Callable[..., Any])
 
@@ -30,7 +30,7 @@ MAX_CONSECUTIVE_POLL_ERRORS = 5
 
 class AuditAgent:
     """
-        from auditagent import AuditAgent
+        from audagent import AuditAgent
 
         audit = AuditAgent(api_key="al_live_...", agent_name="support-bot")
 
@@ -117,7 +117,7 @@ class AuditAgent:
             if attempt < attempts - 1:
                 time.sleep(0.5 * (attempt + 1))
         print(
-            f"[auditagent] WARNING: failed to log event {event.get('action_name')!r} "
+            f"[audagent] WARNING: failed to log event {event.get('action_name')!r} "
             f"after {attempts} attempts: {last_error}",
             file=sys.stderr,
         )

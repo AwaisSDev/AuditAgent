@@ -1,7 +1,7 @@
 import asyncio
 import os
 
-from auditagent import ApprovalDeniedError, ApprovalTimeoutError, AuditAgent
+from audagent import ApprovalDeniedError, ApprovalTimeoutError, AuditAgent
 
 audit = AuditAgent(
     api_key=os.environ["AUDITAGENT_API_KEY"],

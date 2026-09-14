@@ -76,10 +76,10 @@ Both packages are published:
 - SDK: `pip install AudAgent` (https://pypi.org/project/AudAgent/) — PyPI
   rejected the obvious name `auditagent` as "too similar to an existing
   project" (an unrelated `audit-agent` package already exists; PyPI treats
-  hyphens/underscores/case as equivalent for this check). The actual
-  Python import is unaffected — it's still `from auditagent import
-  AuditAgent` and the CLI command is still `auditagent`; only the `pip
-  install` name differs from the import name.
+  hyphens/underscores/case as equivalent for this check). Renamed the
+  package/module/CLI to `audagent` everywhere, not just the PyPI listing
+  name — `from audagent import AuditAgent`, CLI command `audagent`, one
+  consistent name instead of a split between install name and import name.
 - MCP server: `pip install auditagent-mcp` (https://pypi.org/project/auditagent-mcp/)
   — this name wasn't blocked (different normalized string than the
   colliding package), so it kept its original name.
