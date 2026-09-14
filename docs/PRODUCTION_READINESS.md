@@ -6,11 +6,30 @@ provision (a business/vendor choice, not a code gap). Originally dated
 
 ## 2026-09-14 update
 
-- Backend test coverage: 65% → 68% (87 tests, up from 74) — added coverage
-  for the Haiku redaction fallback (`services/classification.py`, now
-  100%), the Resend email no-op-without-key path (`services/email_client.py`,
-  100%), and Slack webhook signature verification (`services/slack_verify.py`,
-  100%).
+- **Backend test coverage: 55% → 97%** (192 tests, up from 74). Every
+  router and service in the backend is now individually covered at 92%
+  or higher (most at 100%) — `worker/tasks.py` (the core F1/F3/F4
+  pipeline), every router (`agents`, `auth`, `billing`, `ingest`,
+  `mcp_data`, `policies`, `questionnaires`, `slack`, `soc2`,
+  `workspaces`, `approvals`, `events`), and every service client
+  (`classification`, `email_client`, `slack_client`, `slack_verify`,
+  `stripe_client`, `approvals_service`).
+- **Two real bugs found by writing these tests, and fixed:**
+  1. `GET /v1/soc2/controls` had **no authentication check at all** —
+     the only unauthenticated route in the entire backend, despite its
+     own docstring claiming otherwise. Anyone with the URL could hit it
+     with no token. Fixed (`routers/soc2.py`); the dashboard always sent
+     a token anyway, so this wasn't user-visible, but the backend itself
+     didn't enforce it.
+  2. `questionnaire_parser.py`'s numbered-list detection never matched
+     the single most common numbering style in real questionnaires —
+     `"1. Do you..."`, `"2) Have you..."` — because of how `str.rstrip`
+     interacts with a trailing space after the marker. Only 2+ digit
+     numbers or a marker glued directly to the text (no space) happened
+     to pass. Since F4's entire value proposition is "don't miss a
+     question" when parsing an upload, silently dropping every
+     single-digit numbered item was a real, customer-facing gap. Fixed
+     with a proper regex anchor.
 - Added customer-facing docs that didn't exist before: a getting-started
   walkthrough ([`docs/GETTING_STARTED.md`](GETTING_STARTED.md)), a support
   page with response-time-target placeholders and a security-reporting
