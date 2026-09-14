@@ -22,7 +22,7 @@ jobs:
           python-version: "3.11"
       - run: pip install -e ".[dev]"
         working-directory: sdk
-      - run: mypy auditagent
+      - run: mypy audagent
         working-directory: sdk
       - run: pytest -v
         working-directory: sdk
