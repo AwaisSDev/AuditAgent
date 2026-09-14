@@ -82,7 +82,7 @@ export default function DocsPage() {
 
           <Section step={3} title="Install the SDK">
             <p>One decorator is the whole integration for logging:</p>
-            <Code>{`pip install auditagent`}</Code>
+            <Code>{`pip install AudAgent`}</Code>
             <Code>{`from auditagent import AuditAgent
 
 audit = AuditAgent(api_key="AUDITAGENT_API_KEY", agent_name="billing-bot")

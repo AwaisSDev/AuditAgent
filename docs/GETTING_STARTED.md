@@ -24,7 +24,7 @@ roadmap.
 ## 3. Install the SDK
 
 ```bash
-pip install auditagent
+pip install AudAgent
 ```
 
 ```python

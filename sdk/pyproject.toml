@@ -3,7 +3,11 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "auditagent"
+# PyPI rejected "auditagent" as too similar to an already-registered
+# project ("audit-agent"); the import name/module (`auditagent`, below)
+# and the CLI command (`auditagent`, see [project.scripts]) are unchanged
+# -- only the `pip install` name differs from the import name.
+name = "AudAgent"
 version = "0.1.0"
 description = "Drop-in logging, human approvals, and compliance evidence for AI agents."
 readme = "README.md"

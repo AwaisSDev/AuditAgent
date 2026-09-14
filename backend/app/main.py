@@ -43,7 +43,7 @@ Two separate schemes, depending on the caller:
 
 ## Where to start
 
-Most integrations only ever need the Python SDK (`pip install auditagent`)
+Most integrations only ever need the Python SDK (`pip install AudAgent`)
 rather than calling this API directly — see its README for the
 `@audit.track(...)` decorator. This reference is for the SDK's own
 internals, the MCP server, or a direct integration in another language.

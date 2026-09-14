@@ -221,7 +221,7 @@ function Promo({
 
 function InstallCard() {
   const [copied, setCopied] = useState(false);
-  const cmd = "pip install auditagent";
+  const cmd = "pip install AudAgent";
 
   async function copy() {
     try {

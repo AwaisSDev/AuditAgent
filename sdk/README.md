@@ -3,7 +3,7 @@
 Drop-in logging, human approvals, and compliance evidence for AI agents.
 
 ```bash
-pip install auditagent
+pip install AudAgent
 ```
 
 ```python

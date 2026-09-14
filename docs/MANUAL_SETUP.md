@@ -70,16 +70,35 @@ At your registrar (or wherever `auditagent.dev` is managed):
 - `app.auditagent.dev` → CNAME to Vercel (Vercel's UI gives you the exact record once you add the domain).
 - `api.auditagent.dev` → CNAME to Railway's provided domain for the web service.
 
-## 9. PyPI (F1 SDK + F6 MCP server)
+## 9. PyPI (F1 SDK + F6 MCP server) — done
 
-1. Create an account at https://pypi.org and enable 2FA (required for new projects since 2023).
-2. Generate an API token (start scoped to "entire account" for the first publish, then narrow it once the project exists).
-3. From `sdk/`: `pip install build twine`, `python -m build`, `twine upload dist/*`.
-4. From `mcp-server/`: same three commands, in that directory.
-5. (Optional, F6) Submit `auditagent-mcp` to the MCP server directory the Anthropic ecosystem uses at the time you ship — this is a manual listing request, not something in this repo.
+Both packages are published:
+- SDK: `pip install AudAgent` (https://pypi.org/project/AudAgent/) — PyPI
+  rejected the obvious name `auditagent` as "too similar to an existing
+  project" (an unrelated `audit-agent` package already exists; PyPI treats
+  hyphens/underscores/case as equivalent for this check). The actual
+  Python import is unaffected — it's still `from auditagent import
+  AuditAgent` and the CLI command is still `auditagent`; only the `pip
+  install` name differs from the import name.
+- MCP server: `pip install auditagent-mcp` (https://pypi.org/project/auditagent-mcp/)
+  — this name wasn't blocked (different normalized string than the
+  colliding package), so it kept its original name.
+
+To ship a new version of either later: bump `version` in the package's
+`pyproject.toml`, then from that package's directory: `pip install build
+twine`, `rm -rf dist build *.egg-info`, `python -m build`, `twine check
+dist/*`, `twine upload dist/*` (needs a PyPI API token — Account Settings
+→ API tokens). PyPI never lets you re-upload or overwrite an existing
+version number, so double-check the version bump first.
+
+Optional, separate step: getting `auditagent-mcp` listed inside Claude
+Desktop/claude.ai's own UI (not just installable via pip) requires a
+different, additional submission — see the note in `PRODUCTION_READINESS.md`
+about the Desktop Extension (MCPB) process, since our server currently
+runs over stdio, not remote HTTP.
 
 ## 10. First login
 
 Once Supabase, backend, and dashboard are all deployed: sign in at
 `app.auditagent.dev`, create your first workspace, create an API key under
-Settings, and use it with the SDK (`pip install auditagent`) or MCP server.
+Settings, and use it with the SDK (`pip install AudAgent`) or MCP server.
