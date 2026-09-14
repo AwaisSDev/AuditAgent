@@ -1,8 +1,9 @@
 """Unit tests for the thin HTTP client backing every MCP tool: request
 shape (params/body sent to the real backend endpoints in
-app/routers/mcp_data.py), auth header, error propagation on a non-2xx
-response, and the "no API key configured" failure mode. Network calls are
-faked via httpx.MockTransport -- no real server involved."""
+app/routers/mcp_data.py), auth header built from the caller-supplied
+api_key, error propagation on a non-2xx response, and the "no API key"
+failure mode. Network calls are faked via httpx.MockTransport -- no real
+server involved."""
 
 import httpx
 import pytest
@@ -11,12 +12,12 @@ from auditagent_mcp import client
 
 
 def _install_transport(monkeypatch, handler):
-    def _client():
-        if not client.API_KEY:
-            raise RuntimeError("AUDITAGENT_API_KEY is not set — see README.md for setup.")
+    def _client(api_key: str) -> httpx.Client:
+        if not api_key:
+            raise RuntimeError("No AuditAgent API key available — see README.md for setup.")
         return httpx.Client(
             base_url=client.BASE_URL,
-            headers={"Authorization": f"Bearer {client.API_KEY}"},
+            headers={"Authorization": f"Bearer {api_key}"},
             timeout=30.0,
             transport=httpx.MockTransport(handler),
         )
@@ -24,14 +25,12 @@ def _install_transport(monkeypatch, handler):
     monkeypatch.setattr(client, "_client", _client)
 
 
-def test_client_raises_when_no_api_key_is_configured(monkeypatch):
-    monkeypatch.setattr(client, "API_KEY", None)
-    with pytest.raises(RuntimeError, match="AUDITAGENT_API_KEY"):
-        client.get_pending_approvals()
+def test_client_raises_when_no_api_key_is_given():
+    with pytest.raises(RuntimeError, match="No AuditAgent API key"):
+        client.get_pending_approvals("")
 
 
 def test_get_recent_actions_sends_expected_params_and_auth_header(monkeypatch):
-    monkeypatch.setattr(client, "API_KEY", "al_live_test_key")
     captured = {}
 
     def handler(request: httpx.Request) -> httpx.Response:
@@ -41,7 +40,7 @@ def test_get_recent_actions_sends_expected_params_and_auth_header(monkeypatch):
 
     _install_transport(monkeypatch, handler)
 
-    result = client.get_recent_actions(limit=5, action_type="external", status="completed")
+    result = client.get_recent_actions("al_live_test_key", limit=5, action_type="external", status="completed")
 
     assert result == [{"id": "evt-1", "status": "completed"}]
     assert captured["auth"] == "Bearer al_live_test_key"
@@ -52,7 +51,6 @@ def test_get_recent_actions_sends_expected_params_and_auth_header(monkeypatch):
 
 
 def test_get_recent_actions_omits_unset_optional_filters(monkeypatch):
-    monkeypatch.setattr(client, "API_KEY", "al_live_test_key")
     captured = {}
 
     def handler(request: httpx.Request) -> httpx.Response:
@@ -61,22 +59,37 @@ def test_get_recent_actions_omits_unset_optional_filters(monkeypatch):
 
     _install_transport(monkeypatch, handler)
 
-    client.get_recent_actions()
+    client.get_recent_actions("al_live_test_key")
 
     assert "action_type" not in captured["url"]
     assert "status" not in captured["url"]
     assert "limit=20" in captured["url"]
 
 
+def test_different_callers_use_their_own_key_not_a_shared_one(monkeypatch):
+    # The whole point of the api_key-per-call design: two "tenants" calling
+    # concurrently must never end up authenticated as each other.
+    seen_auth_headers = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        seen_auth_headers.append(request.headers.get("authorization"))
+        return httpx.Response(200, json=[{"id": "appr-1", "status": "pending"}])
+
+    _install_transport(monkeypatch, handler)
+
+    client.get_pending_approvals("al_live_tenant_a")
+    client.get_pending_approvals("al_live_tenant_b")
+
+    assert seen_auth_headers == ["Bearer al_live_tenant_a", "Bearer al_live_tenant_b"]
+
+
 def test_get_pending_approvals_parses_the_response(monkeypatch):
-    monkeypatch.setattr(client, "API_KEY", "al_live_test_key")
     _install_transport(monkeypatch, lambda req: httpx.Response(200, json=[{"id": "appr-1", "status": "pending"}]))
 
-    assert client.get_pending_approvals() == [{"id": "appr-1", "status": "pending"}]
+    assert client.get_pending_approvals("al_live_test_key") == [{"id": "appr-1", "status": "pending"}]
 
 
 def test_draft_questionnaire_answers_posts_the_question_list(monkeypatch):
-    monkeypatch.setattr(client, "API_KEY", "al_live_test_key")
     captured = {}
 
     def handler(request: httpx.Request) -> httpx.Response:
@@ -86,7 +99,7 @@ def test_draft_questionnaire_answers_posts_the_question_list(monkeypatch):
 
     _install_transport(monkeypatch, handler)
 
-    result = client.draft_questionnaire_answers(["Do you log actions?"])
+    result = client.draft_questionnaire_answers("al_live_test_key", ["Do you log actions?"])
 
     assert captured["method"] == "POST"
     assert b"Do you log actions?" in captured["body"]
@@ -94,16 +107,14 @@ def test_draft_questionnaire_answers_posts_the_question_list(monkeypatch):
 
 
 def test_get_compliance_summary_parses_the_response(monkeypatch):
-    monkeypatch.setattr(client, "API_KEY", "al_live_test_key")
     summary = {"plan": "growth", "approvals_configured": True, "events_last_30_days_by_status": {}, "pending_approvals": 0, "latest_audit_checkpoint": None}
     _install_transport(monkeypatch, lambda req: httpx.Response(200, json=summary))
 
-    assert client.get_compliance_summary() == summary
+    assert client.get_compliance_summary("al_live_test_key") == summary
 
 
 def test_a_non_2xx_response_raises(monkeypatch):
-    monkeypatch.setattr(client, "API_KEY", "al_live_test_key")
     _install_transport(monkeypatch, lambda req: httpx.Response(401, json={"detail": "Invalid API key"}))
 
     with pytest.raises(httpx.HTTPStatusError):
-        client.get_pending_approvals()
+        client.get_pending_approvals("al_live_bad_key")
