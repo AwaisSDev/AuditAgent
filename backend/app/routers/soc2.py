@@ -5,13 +5,13 @@ from fastapi import APIRouter, Depends
 from fastapi.responses import StreamingResponse
 
 from app.data.soc2_controls import SOC2_CONTROLS, Soc2Control
-from app.security import CurrentUser, require_workspace_member
+from app.security import CurrentUser, get_current_user, require_workspace_member
 
 router = APIRouter(prefix="/v1", tags=["soc2"])
 
 
 @router.get("/soc2/controls", response_model=list[Soc2Control])
-async def get_soc2_controls() -> list[Soc2Control]:
+async def get_soc2_controls(user: CurrentUser = Depends(get_current_user)) -> list[Soc2Control]:
     """Public-ish static data (still requires login, no workspace scoping needed
     since it's the same 15 controls for everyone) backing F7's mapping page."""
     return SOC2_CONTROLS
