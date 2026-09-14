@@ -26,6 +26,9 @@ import asyncio
 import contextvars
 import os
 
+from mcp.server.auth.middleware.auth_context import get_access_token
+from mcp.server.auth.provider import OAuthAuthorizationServerProvider, ProviderTokenVerifier
+from mcp.server.auth.settings import AuthSettings, ClientRegistrationOptions, RevocationOptions
 from mcp.server.fastmcp import FastMCP
 from mcp.server.transport_security import TransportSecuritySettings
 from starlette.types import ASGIApp, Receive, Scope, Send
@@ -34,10 +37,15 @@ from auditagent_mcp import client
 
 mcp = FastMCP(
     "auditagent",
-    # Not the default "/mcp": the host app (backend/app/main.py) mounts
-    # http_app() at "/mcp" itself -- without this, the route would resolve
-    # to "/mcp/mcp" instead of "/mcp".
-    streamable_http_path="/",
+    # The default "/mcp" -- the host app (backend/app/main.py) mounts
+    # http_app() at "/" (not "/mcp"), so this path is what actually puts
+    # the MCP protocol endpoint at "/mcp" externally. When OAuth is
+    # configured (configure_oauth), this ASGI app also carries the
+    # discovery/registration/authorize/token routes, which by contrast
+    # need to sit at the true root, not nested under this path -- see the
+    # comment on app.mount(...) in main.py for why mounting under "/mcp"
+    # itself doesn't work once OAuth is involved.
+    streamable_http_path="/mcp",
     # DNS-rebinding protection (Host/Origin header allowlisting) exists for
     # setups that trust same-origin browser requests; ours doesn't -- every
     # request must carry a real AuditAgent API key as its bearer token,
@@ -51,11 +59,22 @@ mcp = FastMCP(
 
 # Set per-request by _BearerTokenMiddleware (HTTP transport only); stdio
 # transport has no such request, so tools fall back to the environment
-# variable below via _resolve_api_key().
+# variable below via _resolve_api_key(). Only used when configure_oauth()
+# below has NOT been called -- once a real auth_server_provider is
+# configured, FastMCP's own bearer-auth middleware (see http_app()) takes
+# over token extraction/verification instead, for both real OAuth-issued
+# tokens and a manually-pasted static API key alike (same load_access_token
+# check either way -- see configure_oauth's docstring).
 _current_api_key: contextvars.ContextVar[str | None] = contextvars.ContextVar("current_api_key", default=None)
 
 
 def _resolve_api_key() -> str:
+    # When configure_oauth() is active, FastMCP's own AuthenticationMiddleware
+    # already validated the caller's token (via the provider's
+    # load_access_token) and stashed it here before this tool ever runs.
+    access_token = get_access_token()
+    if access_token:
+        return access_token.token
     key = _current_api_key.get()
     if key:
         return key
@@ -67,6 +86,54 @@ def _resolve_api_key() -> str:
             "server, connect with your AuditAgent API key as the bearer token."
         )
     return key
+
+
+def configure_oauth(
+    provider: OAuthAuthorizationServerProvider,
+    *,
+    issuer_url: str,
+    resource_server_url: str,
+) -> None:
+    """Wires a real OAuth Authorization Server implementation onto the
+    shared MCP server instance, replacing the plain bearer-token-passthrough
+    model with the full discovery/registration/authorize/token flow that
+    MCP clients' one-click "Connect" buttons expect (rather than requiring
+    every user to manually paste a static token, which some clients --
+    Claude Code's own connector UI, notably -- have no way to do at all;
+    see PRODUCTION_READINESS.md).
+
+    The token this issues (see the provider's exchange_authorization_code)
+    is a real AuditAgent API key, not a separate credential type -- so
+    load_access_token's job is just verifying an API key exactly like the
+    backend already does elsewhere, and the *same* verification correctly
+    accepts a pre-existing key a user pastes in directly too, without going
+    through the OAuth dance at all. Both paths end up authenticated via
+    this one mechanism (FastMCP's own bearer-auth middleware populates
+    get_access_token() for both), which is why _resolve_api_key() only
+    needs to check one place once this has been called.
+
+    Mutates the already-constructed `mcp` singleton's auth-related
+    attributes rather than constructing a second FastMCP instance --
+    streamable_http_app() (see http_app()) reads them fresh on every call,
+    confirmed by reading its source, so this is safe as long as it's
+    called before http_app(). Meant to be called at most once, by the
+    host application (see backend/app/main.py), which supplies a provider
+    backed by its own database and Supabase-authenticated consent page --
+    this package has no opinion on how consent/login itself works.
+    """
+    mcp._auth_server_provider = provider
+    mcp._token_verifier = ProviderTokenVerifier(provider)
+    mcp.settings.auth = AuthSettings(
+        issuer_url=issuer_url,
+        resource_server_url=resource_server_url,
+        # Every token our own load_access_token accepts is, by construction,
+        # only ever valid for this one server (it's a lookup in our own
+        # api_keys table) -- there's no other "resource" a token could be
+        # confused with, so there's nothing for audience-checking to add.
+        validate_token_resource=False,
+        client_registration_options=ClientRegistrationOptions(enabled=True, valid_scopes=["mcp"], default_scopes=["mcp"]),
+        revocation_options=RevocationOptions(enabled=True),
+    )
 
 
 @mcp.tool()

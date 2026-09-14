@@ -113,6 +113,49 @@ def test_contextvar_takes_priority_over_the_environment_variable(monkeypatch):
         server._current_api_key.reset(token)
 
 
+def test_framework_auth_context_takes_priority_over_everything(monkeypatch):
+    # Once configure_oauth() is active, FastMCP's own AuthenticationMiddleware
+    # populates this instead of _current_api_key -- it must win over both
+    # the legacy contextvar and the env var, not just be an alternative path.
+    from mcp.server.auth.middleware.auth_context import auth_context_var
+    from mcp.server.auth.middleware.bearer_auth import AuthenticatedUser
+    from mcp.server.auth.provider import AccessToken
+
+    monkeypatch.setenv("AUDITAGENT_API_KEY", "al_live_server_wide")
+    legacy_token = server._current_api_key.set("al_live_legacy_contextvar")
+    auth_token = auth_context_var.set(
+        AuthenticatedUser(AccessToken(token="al_live_from_oauth", client_id="claude-desktop", scopes=["mcp"]))
+    )
+    try:
+        assert server._resolve_api_key() == "al_live_from_oauth"
+    finally:
+        server._current_api_key.reset(legacy_token)
+        auth_context_var.reset(auth_token)
+
+
+def test_configure_oauth_wires_the_provider_and_token_verifier(monkeypatch):
+    from mcp.server.auth.provider import ProviderTokenVerifier
+
+    fake_provider = MagicMock()
+    original_provider = server.mcp._auth_server_provider
+    original_verifier = server.mcp._token_verifier
+    original_auth = server.mcp.settings.auth
+    try:
+        server.configure_oauth(
+            fake_provider, issuer_url="https://api.example.com", resource_server_url="https://api.example.com/mcp"
+        )
+
+        assert server.mcp._auth_server_provider is fake_provider
+        assert isinstance(server.mcp._token_verifier, ProviderTokenVerifier)
+        assert server.mcp._token_verifier.provider is fake_provider
+        assert str(server.mcp.settings.auth.issuer_url) == "https://api.example.com/"
+        assert server.mcp.settings.auth.client_registration_options.enabled is True
+    finally:
+        server.mcp._auth_server_provider = original_provider
+        server.mcp._token_verifier = original_verifier
+        server.mcp.settings.auth = original_auth
+
+
 # -- _BearerTokenMiddleware ---------------------------------------------------
 #
 # _BearerTokenMiddleware.__call__ also calls _ensure_session_manager_started(),
