@@ -11,6 +11,7 @@ in development; this suite is what runs in CI on every push.
 """
 
 from datetime import datetime, timezone
+from unittest.mock import AsyncMock, patch
 
 import pytest
 from fastapi.testclient import TestClient
@@ -32,12 +33,14 @@ class _FakeQuery:
         self.op = op
         self.payload = payload
         self.filters = {}
+        self._single = False
 
     def eq(self, field, value):
         self.filters[field] = value
         return self
 
     def single(self):
+        self._single = True
         return self
 
     def limit(self, _n):
@@ -72,7 +75,9 @@ class _FakeQuery:
         matches = [r for r in rows.values() if all(r.get(k) == v for k, v in self.filters.items())]
 
         if self.op == "select":
-            return _FakeResult(matches[0] if matches else None) if "id" in self.filters or len(matches) <= 1 else _FakeResult(matches)
+            if self._single:
+                return _FakeResult(matches[0] if matches else None)
+            return _FakeResult(matches)
 
         if self.op == "update":
             if not matches:
@@ -192,3 +197,60 @@ def test_request_approval_requires_an_api_key(fake_db):
             json={"agent_name": "x", "action_type": "external", "action_name": "y", "inputs_preview": {}},
         )
     assert resp.status_code == 401
+
+
+def test_request_approval_posts_to_slack_and_stores_the_message_ref(client, fake_db):
+    fake_db._tables["workspaces"][WORKSPACE_ID]["slack_channel_id"] = "C123"
+
+    with patch("app.routers.approvals.post_approval_request", new=AsyncMock(return_value=("C123", "1700000000.0001"))) as mock_post:
+        resp = client.post(
+            "/v1/approvals/request",
+            json={"agent_name": "billing-bot", "action_type": "external", "action_name": "send_refund", "inputs_preview": {}},
+            headers={"Authorization": "Bearer al_live_test"},
+        )
+
+    assert resp.status_code == 200, resp.text
+    mock_post.assert_awaited_once()
+    approval_id = resp.json()["approval_id"]
+    stored = fake_db._tables["approvals"][approval_id]
+    assert stored["slack_channel"] == "C123"
+    assert stored["slack_message_ts"] == "1700000000.0001"
+
+
+def test_request_approval_falls_back_to_email_when_no_slack_channel(client, fake_db):
+    fake_db._tables["workspaces"][WORKSPACE_ID]["notify_email"] = "ops@example.com"
+
+    with patch("app.routers.approvals.send_approval_email") as mock_email:
+        resp = client.post(
+            "/v1/approvals/request",
+            json={"agent_name": "billing-bot", "action_type": "external", "action_name": "send_refund", "inputs_preview": {}},
+            headers={"Authorization": "Bearer al_live_test"},
+        )
+
+    assert resp.status_code == 200, resp.text
+    mock_email.assert_called_once()
+    args = mock_email.call_args.args
+    assert args[0] == "ops@example.com"
+
+
+def test_list_approvals_filters_by_status(client, fake_db):
+    client.post(
+        "/v1/approvals/request",
+        json={"agent_name": "bot-a", "action_type": "external", "action_name": "send_email", "inputs_preview": {}},
+        headers={"Authorization": "Bearer al_live_test"},
+    )
+    second = client.post(
+        "/v1/approvals/request",
+        json={"agent_name": "bot-b", "action_type": "external", "action_name": "send_refund", "inputs_preview": {}},
+        headers={"Authorization": "Bearer al_live_test"},
+    ).json()
+    client.post(
+        f"/v1/workspaces/{WORKSPACE_ID}/approvals/{second['approval_id']}/decide",
+        json={"decision": "approved"},
+        headers={"Authorization": "Bearer dashboard-session"},
+    )
+
+    resp = client.get(f"/v1/workspaces/{WORKSPACE_ID}/approvals", params={"status": "approved"})
+    assert resp.status_code == 200
+    statuses = {a["status"] for a in resp.json()}
+    assert statuses == {"approved"}
