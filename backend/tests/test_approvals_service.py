@@ -42,6 +42,11 @@ class _FakeQuery:
             # The conditional UPDATE's WHERE clause matches nothing — this is
             # exactly the compare-and-swap this test is verifying.
             return _FakeResult([])
+        if "workspace_id" in self.filters and row.get("workspace_id") != self.filters["workspace_id"]:
+            # Same idea as the status guard above, but for tenant scoping:
+            # a workspace_id filter that doesn't match the row must behave
+            # like "not found", not silently ignore the filter.
+            return _FakeResult(None if self.op == "select" else [])
         if self.op == "update":
             row.update(self.payload)
         return _FakeResult(row if self.op == "select" else [dict(row)])
@@ -67,9 +72,10 @@ class _FakeDb:
         return _FakeApprovalsTable(self._rows)
 
 
-def _pending_approval(approval_id="a1"):
+def _pending_approval(approval_id="a1", workspace_id="ws-1"):
     return {
         "id": approval_id,
+        "workspace_id": workspace_id,
         "status": "pending",
         "requested_action": {"agent_name": "bot", "action_name": "refund"},
         "slack_channel": None,
@@ -191,3 +197,48 @@ async def test_apply_decision_skips_slack_update_when_no_message_was_posted(monk
     await apply_decision("a1", "rejected", decision_by="alice@example.com")
 
     mock_update.assert_not_awaited()
+
+
+# -- Cross-tenant authorization ----------------------------------------------
+#
+# apply_decision is reachable two ways: the dashboard's decide endpoint
+# (routers/approvals.py), which only proves the caller belongs to *some*
+# workspace via require_workspace_member(workspace_id) -- not that
+# approval_id itself belongs to that workspace -- and the Slack webhook
+# (routers/slack.py), authenticated instead by Slack's own signature check
+# on a button AuditAgent posted itself. A missing workspace_id filter here
+# would let any member of any workspace decide another tenant's approval by
+# id, so the dashboard path must pass workspace_id through and have it
+# enforced at the database-query level, not just the initial select.
+
+
+@pytest.mark.anyio
+async def test_apply_decision_rejects_an_approval_belonging_to_a_different_workspace(monkeypatch):
+    rows = {"a1": _pending_approval(workspace_id="ws-victim")}
+    monkeypatch.setattr(approvals_service, "get_db", lambda: _FakeDb(rows))
+
+    with pytest.raises(ValueError):
+        await apply_decision("a1", "approved", decision_by="attacker@example.com", workspace_id="ws-attacker")
+
+    # The victim workspace's approval must be untouched.
+    assert rows["a1"]["status"] == "pending"
+
+
+@pytest.mark.anyio
+async def test_apply_decision_succeeds_with_the_matching_workspace_id(monkeypatch):
+    rows = {"a1": _pending_approval(workspace_id="ws-1")}
+    monkeypatch.setattr(approvals_service, "get_db", lambda: _FakeDb(rows))
+
+    result = await apply_decision("a1", "approved", decision_by="alice@example.com", workspace_id="ws-1")
+
+    assert result["status"] == "approved"
+
+
+@pytest.mark.anyio
+async def test_apply_decision_without_a_workspace_id_still_works_for_the_slack_path(monkeypatch):
+    rows = {"a1": _pending_approval(workspace_id="ws-1")}
+    monkeypatch.setattr(approvals_service, "get_db", lambda: _FakeDb(rows))
+
+    result = await apply_decision("a1", "approved", decision_by="@reviewer")
+
+    assert result["status"] == "approved"

@@ -143,6 +143,7 @@ async def decide_approval(
             decision_by=user.email or user.id,
             decision_note=decision.decision_note,
             edited_action=decision.edited_action,
+            workspace_id=workspace_id,
         )
     except ValueError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc

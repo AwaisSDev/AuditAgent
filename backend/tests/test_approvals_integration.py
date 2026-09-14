@@ -173,6 +173,29 @@ def test_full_approval_lifecycle_through_the_real_app(client):
     assert resp.status_code == 409
 
 
+def test_deciding_an_approval_belonging_to_a_different_workspace_returns_404(client, fake_db):
+    # The approval below belongs to WORKSPACE_ID ("ws-1"); a caller who is a
+    # legitimate member of some *other* workspace (require_workspace_member
+    # only proves membership in the workspace_id in the URL, not that the
+    # approval itself belongs there) must not be able to decide it just by
+    # knowing its id.
+    resp = client.post(
+        "/v1/approvals/request",
+        json={"agent_name": "billing-bot", "action_type": "external", "action_name": "send_refund", "inputs_preview": {}},
+        headers={"Authorization": "Bearer al_live_test"},
+    )
+    approval_id = resp.json()["approval_id"]
+
+    resp = client.post(
+        f"/v1/workspaces/ws-attacker/approvals/{approval_id}/decide",
+        json={"decision": "approved"},
+        headers={"Authorization": "Bearer dashboard-session"},
+    )
+
+    assert resp.status_code == 404
+    assert fake_db._tables["approvals"][approval_id]["status"] == "pending"
+
+
 def test_deciding_an_unknown_approval_returns_404(client):
     resp = client.post(
         f"/v1/workspaces/{WORKSPACE_ID}/approvals/does-not-exist/decide",

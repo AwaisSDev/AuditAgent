@@ -19,10 +19,24 @@ async def apply_decision(
     decision_by: str,
     decision_note: str | None = None,
     edited_action: dict[str, Any] | None = None,
+    workspace_id: str | None = None,
 ) -> dict[str, Any]:
+    """`workspace_id` scopes the lookup/update to a specific tenant. The
+    dashboard's decide endpoint always passes it (the caller only proved
+    membership in *a* workspace via `require_workspace_member`, not that
+    `approval_id` belongs to that same workspace — without this check, any
+    member of any workspace who obtained another tenant's approval_id could
+    approve/reject it). The Slack webhook path omits it: Slack's own
+    signature verification is what authenticates that call, and the
+    approval_id there comes only from a button AuditAgent itself posted."""
     db = get_db()
-    res = db.table("approvals").select("*").eq("id", approval_id).single().execute()
+    q = db.table("approvals").select("*").eq("id", approval_id)
+    if workspace_id is not None:
+        q = q.eq("workspace_id", workspace_id)
+    res = q.single().execute()
     if not res.data:
+        # Same "not found" whether the id doesn't exist or belongs to a
+        # different workspace — never confirm cross-tenant existence.
         raise ValueError("Approval not found")
     approval = res.data
     if approval["status"] != "pending":
@@ -43,7 +57,10 @@ async def apply_decision(
     # two concurrent decisions (e.g. a Slack click racing a dashboard click)
     # must not both succeed with the second one silently overwriting the
     # first while both callers see a 200.
-    result = db.table("approvals").update(update).eq("id", approval_id).eq("status", "pending").execute().data
+    update_q = db.table("approvals").update(update).eq("id", approval_id).eq("status", "pending")
+    if workspace_id is not None:
+        update_q = update_q.eq("workspace_id", workspace_id)
+    result = update_q.execute().data
     if not result:
         raise ApprovalAlreadyDecidedError("Approval was already decided by someone else")
     updated = result[0]
