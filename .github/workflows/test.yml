@@ -1,11 +1,11 @@
 name: Test
 
 # Runs the parts of the test suite that don't need live Supabase/Anthropic/
-# Slack/Stripe credentials: the SDK's full suite, the backend's pure-logic
-# suite (policy engine, plan limits, API-key hashing, the approval
-# race-condition guard, questionnaire parsing/export, Claude-drafting
-# fallback), the MCP server's import/tool-registration smoke check, and the
-# dashboard's typecheck + production build.
+# Slack/Stripe credentials: the SDK's full suite, the backend's full suite
+# (every router/service, 97%+ line coverage, all against an in-memory fake
+# database), the MCP server's suite (its HTTP client against a mocked
+# transport, tool registration/argument-forwarding), and the dashboard's
+# typecheck + production build.
 
 on:
   push:
@@ -52,14 +52,12 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-      - run: pip install -e .
+      - run: pip install -e ".[dev]"
         working-directory: mcp-server
-      - name: Import and verify all tools register
+      - run: pytest -v
         working-directory: mcp-server
         env:
           AUDITAGENT_API_KEY: test
-        run: |
-          python -c "from auditagent_mcp import server; tools = server.mcp._tool_manager.list_tools(); assert len(tools) == 4, tools; print('OK', [t.name for t in tools])"
 
   dashboard:
     runs-on: ubuntu-latest
