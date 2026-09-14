@@ -130,6 +130,18 @@ def test_update_policy_with_valid_yaml(client):
     assert resp.json()["rules_yaml"] == new_yaml
 
 
+def test_update_policy_a_second_time_updates_in_place_rather_than_inserting(client, fake_db):
+    first_yaml = "rules:\n  - match:\n      action_name: send_refund\n    require_approval: true\n"
+    second_yaml = "rules:\n  - match:\n      action_name: delete_account\n    require_approval: true\n"
+
+    client.put(f"/v1/workspaces/{WORKSPACE_ID}/policy", json={"name": "v1", "rules_yaml": first_yaml})
+    resp = client.put(f"/v1/workspaces/{WORKSPACE_ID}/policy", json={"name": "v2", "rules_yaml": second_yaml})
+
+    assert resp.status_code == 200, resp.text
+    assert resp.json()["rules_yaml"] == second_yaml
+    assert len(fake_db._tables["policies"]) == 1  # still one row, not two
+
+
 def test_update_policy_rejects_malformed_yaml(client, fake_db):
     resp = client.put(f"/v1/workspaces/{WORKSPACE_ID}/policy", json={"rules_yaml": "not: valid: policy: yaml: [["})
     assert resp.status_code == 400
