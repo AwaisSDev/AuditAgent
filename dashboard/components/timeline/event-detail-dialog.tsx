@@ -35,15 +35,15 @@ export function EventDetailDialog({ event, onClose }: { event: AuditEvent | null
           <div className="grid grid-cols-2 gap-2 text-xs">
             <div>
               <div className="text-muted-foreground">Model</div>
-              <div>{event.model ?? "—"}</div>
+              <div>{event.model ?? "-"}</div>
             </div>
             <div>
               <div className="text-muted-foreground">Latency</div>
-              <div>{event.latency_ms != null ? `${event.latency_ms}ms` : "—"}</div>
+              <div>{event.latency_ms != null ? `${event.latency_ms}ms` : "-"}</div>
             </div>
             <div>
               <div className="text-muted-foreground">Cost</div>
-              <div>{event.cost_usd != null ? `$${event.cost_usd.toFixed(4)}` : "—"}</div>
+              <div>{event.cost_usd != null ? `$${event.cost_usd.toFixed(4)}` : "-"}</div>
             </div>
           </div>
 

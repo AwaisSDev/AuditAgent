@@ -205,7 +205,7 @@ function ApiKeysCard() {
         </p>
         <pre className="overflow-auto whitespace-pre-wrap break-all rounded-md bg-muted p-3 text-xs">{newKey}</pre>
         {copyState === "failed" && (
-          <p className="mt-1 text-[13px] text-error">Couldn't copy automatically — select the text above and copy it manually.</p>
+          <p className="mt-1 text-[13px] text-error">Couldn't copy automatically. Select the text above and copy it manually.</p>
         )}
         <div className="mt-4 flex justify-end gap-2">
           <Button

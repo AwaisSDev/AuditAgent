@@ -20,7 +20,7 @@ import "./landing.css";
 const FONT_HREF =
   "https://fonts.googleapis.com/css2?family=Google+Sans+Flex:opsz,wght@6..144,400..700&display=swap";
 
-const DOCS_URL = "https://getauditagent.vercel.app/docs"; // the marketing site (AwaisSDev/AuditAgentWeb)
+const DOCS_URL = "/docs";
 
 const SECTIONS = [
   { id: "logging", label: "Logging" },
@@ -76,14 +76,9 @@ function Header() {
             <a href="#logging" className="hover:text-[var(--lp-fg)]">
               How it works
             </a>
-            <a
-              href={DOCS_URL}
-              target="_blank"
-              rel="noreferrer"
-              className="flex items-center gap-0.5 hover:text-[var(--lp-fg)]"
-            >
-              For developers <ArrowUpRight className="h-3.5 w-3.5" />
-            </a>
+            <Link href={DOCS_URL} className="hover:text-[var(--lp-fg)]">
+              For developers
+            </Link>
           </nav>
         </div>
         <div className="flex items-center gap-2.5">
@@ -275,7 +270,7 @@ export function Landing() {
           eyebrow="Logging"
           title="One decorator. Every action, on the record."
           body="Put @audit.track above any function your agent calls. From then on, every time it runs, AuditAgent writes down what happened: what went in, what came out, and when. Your agent doesn't slow down; the bookkeeping happens in the background."
-          cta={{ label: "Read the SDK docs", href: DOCS_URL, external: true }}
+          cta={{ label: "Read the SDK docs", href: DOCS_URL }}
           media={<LoggingArt />}
         />
 
@@ -289,7 +284,7 @@ export function Landing() {
             "Falls back to email if Slack isn't connected",
             "Every decision is recorded too: who, when, how long it took",
           ]}
-          cta={{ label: "See an example policy", href: DOCS_URL, external: true }}
+          cta={{ label: "See an example policy", href: DOCS_URL }}
           media={<ApprovalsArt />}
           mediaLeft
           band
@@ -312,7 +307,7 @@ export function Landing() {
           eyebrow="Evidence"
           title="Security questionnaires, answered from your logs."
           body="Upload a security questionnaire. AuditAgent finds the records that answer each question and writes a first draft, with sources. You read and approve every answer before it goes anywhere, then export as a Word document or spreadsheet."
-          cta={{ label: "How evidence packs work", href: DOCS_URL, external: true }}
+          cta={{ label: "How evidence packs work", href: DOCS_URL }}
           media={<EvidenceArt />}
           mediaLeft
           band
@@ -331,7 +326,7 @@ export function Landing() {
           eyebrow="MCP"
           title="Ask Claude about your audit trail."
           body="Connect AuditAgent to Claude and just ask: anything waiting on me? What did the billing agent do last night? It reads the same record as the dashboard, and it can only read."
-          cta={{ label: "Set up the MCP server", href: DOCS_URL, external: true }}
+          cta={{ label: "Set up the MCP server", href: DOCS_URL }}
           media={<McpArt />}
           mediaLeft
           band
@@ -355,7 +350,7 @@ export function Landing() {
               <PillLink href="/login" variant="primary">
                 Get started
               </PillLink>
-              <PillLink href={DOCS_URL} variant="outline" external>
+              <PillLink href={DOCS_URL} variant="outline">
                 Read the docs
               </PillLink>
             </div>
@@ -370,9 +365,9 @@ export function Landing() {
               <span>AuditAgent · compliance infrastructure for AI agent teams</span>
             </div>
             <div className="flex gap-5">
-              <a href={DOCS_URL} target="_blank" rel="noreferrer" className="hover:text-[var(--lp-fg)]">
+              <Link href={DOCS_URL} className="hover:text-[var(--lp-fg)]">
                 Docs
-              </a>
+              </Link>
               <Link href="/login" className="hover:text-[var(--lp-fg)]">
                 Log in
               </Link>

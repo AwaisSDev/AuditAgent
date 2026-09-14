@@ -131,10 +131,10 @@ export default function TimelinePage() {
                       <StatusBadge status={e.status} />
                     </TD>
                     <TD className="hidden tabular-nums text-muted-foreground md:table-cell">
-                      {e.latency_ms != null ? `${e.latency_ms}ms` : "—"}
+                      {e.latency_ms != null ? `${e.latency_ms}ms` : "-"}
                     </TD>
                     <TD className="hidden tabular-nums text-muted-foreground md:table-cell">
-                      {e.cost_usd != null ? `$${e.cost_usd.toFixed(4)}` : "—"}
+                      {e.cost_usd != null ? `$${e.cost_usd.toFixed(4)}` : "-"}
                     </TD>
                   </TR>
                 ))}
