@@ -14,7 +14,8 @@ provision (a business/vendor choice, not a code gap). Originally dated
   `workspaces`, `approvals`, `events`), and every service client
   (`classification`, `email_client`, `slack_client`, `slack_verify`,
   `stripe_client`, `approvals_service`).
-- **Two real bugs found by writing these tests, and fixed:**
+- **Three real bugs found (two by writing tests, one by an explicit
+  security review pass), all fixed:**
   1. `GET /v1/soc2/controls` had **no authentication check at all** —
      the only unauthenticated route in the entire backend, despite its
      own docstring claiming otherwise. Anyone with the URL could hit it
@@ -30,6 +31,21 @@ provision (a business/vendor choice, not a code gap). Originally dated
      question" when parsing an upload, silently dropping every
      single-digit numbered item was a real, customer-facing gap. Fixed
      with a proper regex anchor.
+  3. **Cross-tenant IDOR in the approval-decide path** (`services/approvals_service.py`):
+     `apply_decision` looked up and updated an approval by `id` alone,
+     with no `workspace_id` check anywhere in the query. The dashboard's
+     decide endpoint only proves the caller belongs to *some* workspace
+     (`require_workspace_member(workspace_id)`) — it never proved the
+     `approval_id` in the URL belongs to that same workspace. Any
+     authenticated member of any workspace who obtained another tenant's
+     approval id (a forwarded Slack message, a log line, anything) could
+     approve or reject that tenant's pending action. Found via a targeted
+     security-review pass over this session's changes; fixed by scoping
+     both the SELECT and the compare-and-swap UPDATE by `workspace_id`
+     when the dashboard path supplies one (a mismatch reads as a clean
+     404, same as a nonexistent id — it never confirms cross-tenant
+     existence). The Slack webhook path is unaffected: it's authenticated
+     by Slack's own signature verification, not workspace membership.
 - Added customer-facing docs that didn't exist before: a getting-started
   walkthrough ([`docs/GETTING_STARTED.md`](GETTING_STARTED.md)), a support
   page with response-time-target placeholders and a security-reporting
