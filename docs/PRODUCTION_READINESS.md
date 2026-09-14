@@ -1,7 +1,26 @@
 # Production readiness
 
 What's been verified this pass, and what's left that only you can decide or
-provision (a business/vendor choice, not a code gap). Dated 2026-09-13.
+provision (a business/vendor choice, not a code gap). Originally dated
+2026-09-13, updated 2026-09-14.
+
+## 2026-09-14 update
+
+- Backend test coverage: 65% → 68% (87 tests, up from 74) — added coverage
+  for the Haiku redaction fallback (`services/classification.py`, now
+  100%), the Resend email no-op-without-key path (`services/email_client.py`,
+  100%), and Slack webhook signature verification (`services/slack_verify.py`,
+  100%).
+- Added customer-facing docs that didn't exist before: a getting-started
+  walkthrough ([`docs/GETTING_STARTED.md`](GETTING_STARTED.md)), a support
+  page with response-time-target placeholders and a security-reporting
+  path ([`SUPPORT.md`](../SUPPORT.md)), and Terms of Service / Privacy
+  Policy **drafts** ([`docs/legal/`](legal/)) grounded in what the code
+  actually does (the real sub-processor list, the real redaction
+  pipeline, the real append-only guarantee) — these still need a licensed
+  lawyer's review before they govern a real customer relationship; that
+  review is a business step, not a code gap, so it's listed below rather
+  than claimed as done.
 
 ## Verified working (live, against a real Supabase project)
 
@@ -67,7 +86,14 @@ none of them are something to write code for on your behalf:
   vendor and have a key.
 - **Incident response plan / SLA** — these are operational/business
   commitments about *your* team's on-call process and what you promise
-  customers, not something inferable from the code.
+  customers, not something inferable from the code. `docs/legal/` and
+  `SUPPORT.md` now have drafts with the specific placeholders you need to
+  fill in (response-time numbers, status-page choice, on-call process).
+- **Legal sign-off on the Terms/Privacy drafts** — `docs/legal/` has
+  working drafts grounded in the actual sub-processor list and data flow,
+  but every bracketed placeholder and the liability/arbitration sections
+  specifically need a licensed lawyer in your jurisdiction before you
+  publish them as binding.
 - **Cross-browser / real-device testing** — this session's testing ran in
   one Chromium-based sandboxed preview. It's a reasonable proxy for mobile
   Safari/Chrome layout (same rendering engine family for Chrome, and the

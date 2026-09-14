@@ -18,6 +18,9 @@ dashboard/                Next.js 14 dashboard                              [ste
 mcp-server/               `auditagent-mcp` — Claude MCP server              [step 8]
 docs/MANUAL_SETUP.md      Every account/dashboard click a human must do
 docs/DEPLOYMENT.md        Env vars + how each piece ships
+docs/GETTING_STARTED.md   Customer-facing onboarding walkthrough
+docs/legal/               ToS/Privacy Policy drafts (need a lawyer's review — not final)
+SUPPORT.md                Support channels, response-time targets, security reporting
 ```
 
 ## Architecture, in one pass
