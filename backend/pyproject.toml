@@ -1,0 +1,8 @@
+[tool.pytest.ini_options]
+# Without this, `app` is only importable when pytest happens to be invoked as
+# `python -m pytest` (which adds the cwd to sys.path as a side effect of `-m`)
+# -- the bare `pytest` entry point CI actually runs has no such side effect,
+# and fails every test file's `from app... import ...` with
+# ModuleNotFoundError: No module named 'app'. This makes pytest itself add
+# the rootdir to sys.path, regardless of how it's invoked.
+pythonpath = ["."]
