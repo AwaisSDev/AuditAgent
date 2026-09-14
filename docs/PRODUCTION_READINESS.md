@@ -6,6 +6,12 @@ provision (a business/vendor choice, not a code gap). Originally dated
 
 ## 2026-09-14 update
 
+- **Every package in the repo now has a real automated test suite,
+  verified together in one consolidated run**: backend 196 tests (97%
+  line coverage), SDK 40 tests (93% coverage, mypy clean), MCP server 16
+  tests (previously zero), dashboard 23 tests (previously zero, via a
+  newly-added Vitest setup) plus a clean `tsc --noEmit` and production
+  build. 275 tests total, all green together, not just individually.
 - **Backend test coverage: 55% → 97%** (192 tests, up from 74). Every
   router and service in the backend is now individually covered at 92%
   or higher (most at 100%) — `worker/tasks.py` (the core F1/F3/F4
