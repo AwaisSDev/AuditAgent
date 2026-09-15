@@ -25,7 +25,9 @@ Two ways to run this, both exposing the same four tools:
 import asyncio
 import contextvars
 import os
+from typing import Protocol
 
+import anyio
 from mcp.server.auth.middleware.auth_context import get_access_token
 from mcp.server.auth.provider import OAuthAuthorizationServerProvider, ProviderTokenVerifier
 from mcp.server.auth.settings import AuthSettings, ClientRegistrationOptions, RevocationOptions
@@ -94,8 +96,52 @@ def configure_backend_url(base_url: str) -> None:
     because this package is mounted *inside* the same backend it's a thin
     client for (see backend/app/main.py) — without this, every tool call
     goes out over the network to a domain nobody configured, and fails.
-    Call this once at startup, same place as configure_oauth."""
+    Call this once at startup, same place as configure_oauth.
+
+    Superseded by configure_data_provider when that's also called (see
+    below) -- kept as a fallback for a standalone deployment of this
+    package that still wants a real default instead of the placeholder."""
     client.set_base_url(base_url)
+
+
+class DataProvider(Protocol):
+    """What configure_data_provider needs implemented, matching client.py's
+    four functions but as async methods on one object instead of module-
+    level functions -- lets a host app hand in something backed by direct
+    in-process calls (see backend/app/services/mcp_provider.py) instead of
+    client.py's real HTTP round trip."""
+
+    async def get_recent_actions(
+        self, api_key: str, *, limit: int = 20, action_type: str | None = None, status: str | None = None
+    ) -> list[dict]: ...
+
+    async def get_pending_approvals(self, api_key: str) -> list[dict]: ...
+
+    async def draft_questionnaire_answers(self, api_key: str, questions: list[str]) -> list[dict]: ...
+
+    async def get_compliance_summary(self, api_key: str) -> dict: ...
+
+
+_data_provider: DataProvider | None = None
+
+
+def configure_data_provider(provider: DataProvider) -> None:
+    """Makes every tool call this object directly instead of going through
+    client.py's httpx call to configure_backend_url's address.
+
+    Exists because that address, even once correctly configured, is this
+    same server's own public hostname -- calling it from inside the same
+    process is a self-referential round trip out through the host's
+    network ingress and back in, which on Hugging Face Spaces in practice
+    stalls for the client's full timeout rather than completing quickly
+    (observed directly: a plain REST call to the same endpoint from
+    outside the container returned in ~2s, while the identical call made
+    by a tool from inside it took 30s and still timed out). Call this once
+    at startup, same place as configure_oauth/configure_backend_url --
+    when both this and configure_backend_url have been called, this one
+    wins."""
+    global _data_provider
+    _data_provider = provider
 
 
 def configure_oauth(
@@ -147,7 +193,7 @@ def configure_oauth(
 
 
 @mcp.tool()
-def get_recent_actions(limit: int = 20, action_type: str | None = None, status: str | None = None) -> list[dict]:
+async def get_recent_actions(limit: int = 20, action_type: str | None = None, status: str | None = None) -> list[dict]:
     """Get the most recent logged AI agent actions for this workspace.
 
     Args:
@@ -155,17 +201,23 @@ def get_recent_actions(limit: int = 20, action_type: str | None = None, status: 
         action_type: optional filter, e.g. "external" or "data_access".
         status: optional filter, one of completed/approved/rejected/denied_timeout/error.
     """
-    return client.get_recent_actions(_resolve_api_key(), limit=limit, action_type=action_type, status=status)
+    api_key = _resolve_api_key()
+    if _data_provider is not None:
+        return await _data_provider.get_recent_actions(api_key, limit=limit, action_type=action_type, status=status)
+    return await anyio.to_thread.run_sync(lambda: client.get_recent_actions(api_key, limit=limit, action_type=action_type, status=status))
 
 
 @mcp.tool()
-def get_pending_approvals() -> list[dict]:
+async def get_pending_approvals() -> list[dict]:
     """Get all approval requests currently awaiting a human decision."""
-    return client.get_pending_approvals(_resolve_api_key())
+    api_key = _resolve_api_key()
+    if _data_provider is not None:
+        return await _data_provider.get_pending_approvals(api_key)
+    return await anyio.to_thread.run_sync(lambda: client.get_pending_approvals(api_key))
 
 
 @mcp.tool()
-def draft_questionnaire_answers(questions: list[str]) -> list[dict]:
+async def draft_questionnaire_answers(questions: list[str]) -> list[dict]:
     """Draft answers to one or more security-questionnaire-style questions,
     grounded in this workspace's actual logged events, with cited event ids.
 
@@ -176,16 +228,22 @@ def draft_questionnaire_answers(questions: list[str]) -> list[dict]:
     Args:
         questions: one or more questions, e.g. ["Do you log all AI agent actions?"]
     """
-    return client.draft_questionnaire_answers(_resolve_api_key(), questions)
+    api_key = _resolve_api_key()
+    if _data_provider is not None:
+        return await _data_provider.draft_questionnaire_answers(api_key, questions)
+    return await anyio.to_thread.run_sync(lambda: client.draft_questionnaire_answers(api_key, questions))
 
 
 @mcp.tool()
-def get_compliance_summary() -> dict:
+async def get_compliance_summary() -> dict:
     """Get a snapshot of this workspace's compliance posture: plan, whether
     Slack/email approval routing is configured, event counts by status over
     the last 30 days, how many approvals are pending, and the most recent
     audit-chain checkpoint (proof the event log hasn't been altered since)."""
-    return client.get_compliance_summary(_resolve_api_key())
+    api_key = _resolve_api_key()
+    if _data_provider is not None:
+        return await _data_provider.get_compliance_summary(api_key)
+    return await anyio.to_thread.run_sync(lambda: client.get_compliance_summary(api_key))
 
 
 # FastMCP's streamable_http_app() declares its own `lifespan=` (it enters

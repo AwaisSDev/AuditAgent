@@ -30,7 +30,7 @@ def test_get_recent_actions_forwards_its_arguments_and_the_resolved_key(monkeypa
     mock = MagicMock(return_value=[{"id": "evt-1"}])
     monkeypatch.setattr(server.client, "get_recent_actions", mock)
 
-    result = server.get_recent_actions(limit=5, action_type="external", status="completed")
+    result = asyncio.run(server.get_recent_actions(limit=5, action_type="external", status="completed"))
 
     mock.assert_called_once_with("al_live_resolved", limit=5, action_type="external", status="completed")
     assert result == [{"id": "evt-1"}]
@@ -41,7 +41,7 @@ def test_get_pending_approvals_forwards_to_the_client(monkeypatch):
     mock = MagicMock(return_value=[{"id": "appr-1"}])
     monkeypatch.setattr(server.client, "get_pending_approvals", mock)
 
-    assert server.get_pending_approvals() == [{"id": "appr-1"}]
+    assert asyncio.run(server.get_pending_approvals()) == [{"id": "appr-1"}]
     mock.assert_called_once_with("al_live_resolved")
 
 
@@ -50,7 +50,7 @@ def test_draft_questionnaire_answers_forwards_the_question_list(monkeypatch):
     mock = MagicMock(return_value=[{"question": "q", "answer": "a", "cited_event_ids": []}])
     monkeypatch.setattr(server.client, "draft_questionnaire_answers", mock)
 
-    result = server.draft_questionnaire_answers(["Do you log actions?"])
+    result = asyncio.run(server.draft_questionnaire_answers(["Do you log actions?"]))
 
     mock.assert_called_once_with("al_live_resolved", ["Do you log actions?"])
     assert result[0]["answer"] == "a"
@@ -61,8 +61,29 @@ def test_get_compliance_summary_forwards_to_the_client(monkeypatch):
     mock = MagicMock(return_value={"plan": "free"})
     monkeypatch.setattr(server.client, "get_compliance_summary", mock)
 
-    assert server.get_compliance_summary() == {"plan": "free"}
+    assert asyncio.run(server.get_compliance_summary()) == {"plan": "free"}
     mock.assert_called_once_with("al_live_resolved")
+
+
+def test_tools_use_the_configured_data_provider_instead_of_the_client_when_set(monkeypatch):
+    # The whole point of configure_data_provider: skip client.py's network
+    # call entirely once a host app has wired one in.
+    monkeypatch.setattr(server, "_resolve_api_key", lambda: "al_live_resolved")
+    client_mock = MagicMock(side_effect=AssertionError("should not call the network client"))
+    monkeypatch.setattr(server.client, "get_recent_actions", client_mock)
+
+    provider = MagicMock()
+    provider.get_recent_actions = AsyncMock(return_value=[{"id": "evt-from-provider"}])
+    original = server._data_provider
+    try:
+        server.configure_data_provider(provider)
+        result = asyncio.run(server.get_recent_actions(limit=5, action_type=None, status=None))
+    finally:
+        server._data_provider = original
+
+    assert result == [{"id": "evt-from-provider"}]
+    provider.get_recent_actions.assert_called_once_with("al_live_resolved", limit=5, action_type=None, status=None)
+    client_mock.assert_not_called()
 
 
 @pytest.mark.parametrize(

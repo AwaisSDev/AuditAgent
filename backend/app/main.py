@@ -1,6 +1,6 @@
 from contextlib import asynccontextmanager
 
-from auditagent_mcp.server import configure_backend_url, configure_oauth, http_app as mcp_http_app
+from auditagent_mcp.server import configure_backend_url, configure_data_provider, configure_oauth, http_app as mcp_http_app
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -8,6 +8,7 @@ from app.arq_pool import close_arq_pool, get_arq_pool
 from app.config import get_settings
 from app.routers import agents, approvals, auth, billing, events, ingest, mcp_data, oauth, policies, questionnaires, slack, soc2, workspaces
 from app.services.mcp_oauth_provider import get_oauth_provider
+from app.services.mcp_provider import BackendDataProvider
 
 
 @asynccontextmanager
@@ -92,6 +93,7 @@ async def healthz() -> dict:
 # do OAuth and have no field to paste a token into at all. Either way ends
 # up authenticated as a real, revokable API key, checked the same way.
 configure_backend_url(settings.app_base_url)
+configure_data_provider(BackendDataProvider())
 configure_oauth(
     get_oauth_provider(),
     issuer_url=settings.app_base_url,
