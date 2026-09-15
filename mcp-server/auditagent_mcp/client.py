@@ -8,8 +8,10 @@ import httpx
 # it can't rely on AUDITAGENT_BASE_URL being set before this module is
 # first imported, since that depends on import order. Falls back to the
 # env var (for a standalone deployment of this package) and then the
-# placeholder default (for local/stdio use against the public API).
-_base_url = os.environ.get("AUDITAGENT_BASE_URL", "https://api.auditagent.dev")
+# real deployed origin as a default (for local/stdio use against the
+# public API) -- until app.auditagent.dev's DNS is pointed here, this
+# hardcoded HF Space URL is the actual reachable backend.
+_base_url = os.environ.get("AUDITAGENT_BASE_URL", "https://awais1290-auditagent.hf.space")
 
 
 def set_base_url(base_url: str) -> None:

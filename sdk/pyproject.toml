@@ -9,7 +9,7 @@ build-backend = "hatchling.build"
 # consistent name instead of a confusing split between what you `pip
 # install` and what you `import`.
 name = "AudAgent"
-version = "0.2.1"
+version = "0.2.2"
 description = "Drop-in logging, human approvals, and compliance evidence for AI agents."
 readme = "README.md"
 requires-python = ">=3.9"
