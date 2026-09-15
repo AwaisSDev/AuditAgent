@@ -16,7 +16,7 @@ def _install_transport(monkeypatch, handler):
         if not api_key:
             raise RuntimeError("No AuditAgent API key available — see README.md for setup.")
         return httpx.Client(
-            base_url=client.BASE_URL,
+            base_url=client._base_url,
             headers={"Authorization": f"Bearer {api_key}"},
             timeout=30.0,
             transport=httpx.MockTransport(handler),
@@ -118,3 +118,16 @@ def test_a_non_2xx_response_raises(monkeypatch):
 
     with pytest.raises(httpx.HTTPStatusError):
         client.get_pending_approvals("al_live_bad_key")
+
+
+def test_set_base_url_overrides_the_default_for_subsequent_calls(monkeypatch):
+    # The whole point of set_base_url: a host app (backend/app/main.py)
+    # that mounts this package in-process must be able to point it at its
+    # own real origin, since it can't rely on AUDITAGENT_BASE_URL having
+    # been set before this module was first imported.
+    original = client._base_url
+    try:
+        client.set_base_url("https://example-host.test")
+        assert client._base_url == "https://example-host.test"
+    finally:
+        client.set_base_url(original)

@@ -88,6 +88,16 @@ def _resolve_api_key() -> str:
     return key
 
 
+def configure_backend_url(base_url: str) -> None:
+    """Points the MCP tools' outbound calls (client.py) at the host app's
+    own real origin, instead of client.py's placeholder default. Needed
+    because this package is mounted *inside* the same backend it's a thin
+    client for (see backend/app/main.py) — without this, every tool call
+    goes out over the network to a domain nobody configured, and fails.
+    Call this once at startup, same place as configure_oauth."""
+    client.set_base_url(base_url)
+
+
 def configure_oauth(
     provider: OAuthAuthorizationServerProvider,
     *,

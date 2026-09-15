@@ -1,0 +1,34 @@
+name: Publish to PyPI
+
+# Manual, on-demand publish for either package, using PyPI's Trusted
+# Publishing (OIDC) -- no stored PyPI token anywhere, unlike a plain
+# `twine upload`. One-time setup required on PyPI's side before this can
+# run (see docs/PUBLISHING.md): a repo owner adds a trusted publisher on
+# each project (pypi.org/manage/project/<name>/settings/publishing/)
+# pointing at this repo, this workflow filename, and no environment.
+
+on:
+  workflow_dispatch:
+    inputs:
+      package:
+        description: "Which package to publish (its version is whatever's currently in its pyproject.toml)"
+        required: true
+        type: choice
+        options: [sdk, mcp-server]
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install build
+      - run: python -m build
+        working-directory: ${{ inputs.package }}
+      - uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: ${{ inputs.package }}/dist

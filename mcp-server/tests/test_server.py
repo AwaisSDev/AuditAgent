@@ -156,6 +156,17 @@ def test_configure_oauth_wires_the_provider_and_token_verifier(monkeypatch):
         server.mcp.settings.auth = original_auth
 
 
+def test_configure_backend_url_points_the_client_at_the_given_origin():
+    from auditagent_mcp import client
+
+    original = client._base_url
+    try:
+        server.configure_backend_url("https://host-app.example.com")
+        assert client._base_url == "https://host-app.example.com"
+    finally:
+        client.set_base_url(original)
+
+
 # -- _BearerTokenMiddleware ---------------------------------------------------
 #
 # _BearerTokenMiddleware.__call__ also calls _ensure_session_manager_started(),

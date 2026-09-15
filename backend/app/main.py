@@ -1,6 +1,6 @@
 from contextlib import asynccontextmanager
 
-from auditagent_mcp.server import configure_oauth, http_app as mcp_http_app
+from auditagent_mcp.server import configure_backend_url, configure_oauth, http_app as mcp_http_app
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -91,6 +91,7 @@ async def healthz() -> dict:
 # clients' own "Connect" buttons (Claude Code's, notably) only know how to
 # do OAuth and have no field to paste a token into at all. Either way ends
 # up authenticated as a real, revokable API key, checked the same way.
+configure_backend_url(settings.app_base_url)
 configure_oauth(
     get_oauth_provider(),
     issuer_url=settings.app_base_url,

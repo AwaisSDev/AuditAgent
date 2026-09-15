@@ -2,13 +2,25 @@ import os
 
 import httpx
 
-BASE_URL = os.environ.get("AUDITAGENT_BASE_URL", "https://api.auditagent.dev")
+# Mutable, not a frozen constant: when this package is mounted into the
+# backend itself (see server.configure_backend_url, called from
+# backend/app/main.py), the host app sets this to its own real origin —
+# it can't rely on AUDITAGENT_BASE_URL being set before this module is
+# first imported, since that depends on import order. Falls back to the
+# env var (for a standalone deployment of this package) and then the
+# placeholder default (for local/stdio use against the public API).
+_base_url = os.environ.get("AUDITAGENT_BASE_URL", "https://api.auditagent.dev")
+
+
+def set_base_url(base_url: str) -> None:
+    global _base_url
+    _base_url = base_url
 
 
 def _client(api_key: str) -> httpx.Client:
     if not api_key:
         raise RuntimeError("No AuditAgent API key available — see README.md for setup.")
-    return httpx.Client(base_url=BASE_URL, headers={"Authorization": f"Bearer {api_key}"}, timeout=30.0)
+    return httpx.Client(base_url=_base_url, headers={"Authorization": f"Bearer {api_key}"}, timeout=30.0)
 
 
 def get_recent_actions(
