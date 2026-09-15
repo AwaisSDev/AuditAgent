@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Check, Mail, RotateCcw, Search, UserRoundCheck, X, type LucideIcon } from "lucide-react";
 
 /* Scroll-scrubbed hero.
@@ -106,7 +106,7 @@ export function Hero() {
   const openRef = useRef<number | null>(null);
   const repaintRef = useRef<() => void>(() => {});
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const root = rootRef.current;
     const outer = outerRef.current;
     const pin = pinRef.current;

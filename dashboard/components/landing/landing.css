@@ -67,6 +67,14 @@
   will-change: transform, opacity;
 }
 .lp-hero-stage {
+  /* Default size before JS measures the exact viewport-fit scale (see
+     Hero()'s measure()) -- its only children are absolutely positioned,
+     so without this it has zero intrinsic height and collapses to 0px
+     until that effect runs. Matches STAGE_W/STAGE_H's 480:400 ratio and
+     measure()'s own `(vw - 48) / STAGE_W` width-fit formula, so there's
+     no visible jump from this default to JS's own first measurement. */
+  width: min(480px, calc(100vw - 48px));
+  aspect-ratio: 480 / 400;
   transition: transform 0.4s ease-out;
   will-change: transform;
 }
