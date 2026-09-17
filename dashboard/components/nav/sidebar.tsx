@@ -2,10 +2,14 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useQuery } from "@tanstack/react-query";
 import { History, CircleCheck, FileText, ShieldCheck, BadgeCheck, Settings, LogOut, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { createSupabaseBrowserClient } from "@/lib/supabase-browser";
 import { WorkspaceSwitcher } from "@/components/nav/workspace-switcher";
+import { useWorkspace } from "@/lib/workspace-context";
+import { api } from "@/lib/api";
+import type { Approval } from "@/lib/types";
 
 const NAV_ITEMS = [
   { href: "/dashboard", label: "Timeline", icon: History },
@@ -19,6 +23,17 @@ const NAV_ITEMS = [
 export function Sidebar({ open, onClose }: { open?: boolean; onClose?: () => void }) {
   const pathname = usePathname();
   const supabase = createSupabaseBrowserClient();
+  const { workspace } = useWorkspace();
+
+  // Same queryKey/queryFn as the Approvals page's "pending" tab, so the two
+  // share one cached fetch instead of double-polling the backend.
+  const { data: pendingApprovals = [] } = useQuery({
+    queryKey: ["approvals", workspace?.id, "pending"],
+    queryFn: () => api.get<Approval[]>(`/v1/workspaces/${workspace!.id}/approvals?status=pending`),
+    enabled: !!workspace,
+    refetchInterval: 10_000,
+  });
+  const pendingCount = pendingApprovals.length;
 
   async function signOut() {
     await supabase.auth.signOut();
@@ -71,7 +86,12 @@ export function Sidebar({ open, onClose }: { open?: boolean; onClose?: () => voi
                 )}
               >
                 <Icon className="h-[18px] w-[18px] shrink-0" strokeWidth={1.75} />
-                {item.label}
+                <span className="flex-1">{item.label}</span>
+                {item.href === "/approvals" && pendingCount > 0 && (
+                  <span className="flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-warning px-1.5 text-[11px] font-semibold leading-none text-warning-foreground">
+                    {pendingCount > 99 ? "99+" : pendingCount}
+                  </span>
+                )}
               </Link>
             );
           })}
