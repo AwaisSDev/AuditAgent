@@ -14,12 +14,13 @@ import pytest
 from auditagent_mcp import server
 
 
-def test_all_four_tools_are_registered():
+def test_all_five_tools_are_registered():
     tools = asyncio.run(server.mcp.list_tools())
     names = {t.name for t in tools}
     assert names == {
         "get_recent_actions",
         "get_pending_approvals",
+        "decide_approval",
         "draft_questionnaire_answers",
         "get_compliance_summary",
     }
@@ -43,6 +44,17 @@ def test_get_pending_approvals_forwards_to_the_client(monkeypatch):
 
     assert asyncio.run(server.get_pending_approvals()) == [{"id": "appr-1"}]
     mock.assert_called_once_with("al_live_resolved")
+
+
+def test_decide_approval_forwards_to_the_client(monkeypatch):
+    monkeypatch.setattr(server, "_resolve_api_key", lambda: "al_live_resolved")
+    mock = MagicMock(return_value={"approval_id": "appr-1", "status": "approved"})
+    monkeypatch.setattr(server.client, "decide_approval", mock)
+
+    result = asyncio.run(server.decide_approval("appr-1", "approved", "looks fine"))
+
+    mock.assert_called_once_with("al_live_resolved", "appr-1", "approved", "looks fine")
+    assert result["status"] == "approved"
 
 
 def test_draft_questionnaire_answers_forwards_the_question_list(monkeypatch):

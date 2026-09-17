@@ -48,7 +48,7 @@ async def list_api_keys(workspace_id: str, user: CurrentUser = Depends(require_w
     return (
         await run_db(
             lambda: db.table("api_keys")
-            .select("id, name, key_prefix, created_at, last_used_at, revoked_at")
+            .select("id, name, key_prefix, can_review, created_at, last_used_at, revoked_at")
             .eq("workspace_id", workspace_id)
             .order("created_at")
             .execute()
@@ -64,11 +64,20 @@ async def create_api_key(
     db = get_db()
     created = await run_db(
         lambda: db.table("api_keys")
-        .insert({"workspace_id": workspace_id, "name": body.name, "key_prefix": prefix, "key_hash": key_hash, "created_by": user.id})
+        .insert(
+            {
+                "workspace_id": workspace_id,
+                "name": body.name,
+                "key_prefix": prefix,
+                "key_hash": key_hash,
+                "can_review": body.can_review,
+                "created_by": user.id,
+            }
+        )
         .execute()
     )
     row = created.data[0]
-    return ApiKeyCreateOut(id=row["id"], name=row["name"], key_prefix=prefix, full_key=full_key)
+    return ApiKeyCreateOut(id=row["id"], name=row["name"], key_prefix=prefix, can_review=row["can_review"], full_key=full_key)
 
 
 @router.delete("/api-keys/{key_id}", status_code=204)

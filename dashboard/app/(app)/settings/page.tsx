@@ -112,6 +112,7 @@ function ApiKeysCard() {
   const { workspace } = useWorkspace();
   const queryClient = useQueryClient();
   const [name, setName] = useState("");
+  const [canReview, setCanReview] = useState(false);
   const [newKey, setNewKey] = useState<string | null>(null);
   const [copyState, setCopyState] = useState<"idle" | "copied" | "failed">("idle");
 
@@ -122,10 +123,12 @@ function ApiKeysCard() {
   });
 
   const create = useMutation({
-    mutationFn: () => api.post<{ full_key: string }>(`/v1/workspaces/${workspace!.id}/api-keys`, { name }),
+    mutationFn: () =>
+      api.post<{ full_key: string }>(`/v1/workspaces/${workspace!.id}/api-keys`, { name, can_review: canReview }),
     onSuccess: (res) => {
       setNewKey(res.full_key);
       setName("");
+      setCanReview(false);
       queryClient.invalidateQueries({ queryKey: ["api-keys", workspace?.id] });
     },
   });
@@ -152,6 +155,18 @@ function ApiKeysCard() {
             Create key
           </Button>
         </div>
+        <label className="flex items-start gap-2 text-[13px] text-muted-foreground">
+          <input
+            type="checkbox"
+            checked={canReview}
+            onChange={(e) => setCanReview(e.target.checked)}
+            className="mt-0.5 h-4 w-4 shrink-0 accent-primary"
+          />
+          <span>
+            Can approve/reject actions (for a reviewer using Claude/MCP) — leave off for keys agents use to log and
+            track their own actions, so an agent can never decide its own pending request.
+          </span>
+        </label>
         {(create.isError || revoke.isError) && (
           <p className="text-[13px] text-error">
             {(create.error ?? revoke.error) instanceof Error
@@ -165,6 +180,7 @@ function ApiKeysCard() {
             <TR>
               <TH>Name</TH>
               <TH>Prefix</TH>
+              <TH>Type</TH>
               <TH>Created</TH>
               <TH>Last used</TH>
               <TH />
@@ -175,6 +191,7 @@ function ApiKeysCard() {
               <TR key={k.id}>
                 <TD>{k.name}</TD>
                 <TD className="font-mono text-xs">{k.key_prefix}...</TD>
+                <TD>{k.can_review ? <Badge variant="warning">reviewer</Badge> : <Badge variant="secondary">agent</Badge>}</TD>
                 <TD className="text-xs text-muted-foreground">{formatDate(k.created_at)}</TD>
                 <TD className="text-xs text-muted-foreground">{k.last_used_at ? formatDate(k.last_used_at) : "never"}</TD>
                 <TD>

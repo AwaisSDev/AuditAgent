@@ -1,7 +1,8 @@
-"""Integration tests for the four F6 MCP-server-facing endpoints: recent
-actions, pending approvals, ad-hoc questionnaire drafting, and the
-compliance summary roll-up — all authenticated by API key, not a signed-in
-user, since the MCP server is a headless integration."""
+"""Integration tests for the F6 MCP-server-facing endpoints: recent
+actions, pending approvals, deciding an approval, ad-hoc questionnaire
+drafting, and the compliance summary roll-up — all authenticated by API
+key, not a signed-in user, since the MCP server is a headless
+integration."""
 
 from datetime import datetime, timedelta, timezone
 from types import SimpleNamespace
@@ -23,9 +24,11 @@ class _FakeResult:
 
 
 class _FakeQuery:
-    def __init__(self, rows, count_mode=None):
+    def __init__(self, rows, count_mode=None, op="select", payload=None):
         self._rows = rows
         self.count_mode = count_mode
+        self.op = op
+        self.payload = payload
         self.conds = []
         self.order_field = None
         self.order_desc = False
@@ -61,6 +64,11 @@ class _FakeQuery:
             elif op == "gte":
                 matches = [r for r in matches if r.get(field, "") >= value]
 
+        if self.op == "update":
+            for r in matches:
+                r.update(self.payload)
+            return _FakeResult([dict(r) for r in matches])
+
         if self.order_field is not None:
             matches = sorted(matches, key=lambda r: r.get(self.order_field), reverse=self.order_desc)
         if self.limit_n is not None:
@@ -80,10 +88,13 @@ class _FakeTable:
     def select(self, *_a, **kw):
         return _FakeQuery(self.rows, count_mode=kw.get("count"))
 
+    def update(self, payload):
+        return _FakeQuery(self.rows, op="update", payload=payload)
+
 
 class _FakeDb:
     def __init__(self):
-        self._tables = {"events": {}, "approvals": {}, "workspaces": {}, "audit_chain": {}}
+        self._tables = {"events": {}, "approvals": {}, "workspaces": {}, "audit_chain": {}, "api_keys": {}}
 
     def table(self, name):
         return _FakeTable(self._tables.setdefault(name, {}))
@@ -93,6 +104,10 @@ class _FakeDb:
 def fake_db(monkeypatch):
     db = _FakeDb()
     monkeypatch.setattr("app.routers.mcp_data.get_db", lambda: db)
+    # decide_approval_via_mcp calls into apply_decision (approvals_service.py),
+    # which does its own get_db() lookup -- same fake, so both see one
+    # consistent set of tables.
+    monkeypatch.setattr("app.services.approvals_service.get_db", lambda: db)
     return db
 
 
@@ -116,14 +131,68 @@ def test_recent_actions_scoped_to_workspace_and_ordered(client, fake_db):
     assert ids == ["e2", "e1"]
 
 
+def _approval_row(id_: str, status: str, requested_at: str, **action_overrides):
+    action = {"agent_name": "ops-bot", "action_type": "external", "action_name": "send_refund", "inputs_preview": {}}
+    action.update(action_overrides)
+    return {
+        "id": id_,
+        "workspace_id": WORKSPACE_ID,
+        "status": status,
+        "requested_at": requested_at,
+        "decided_at": None,
+        "decision_by": None,
+        "decision_note": None,
+        "requested_action": action,
+    }
+
+
 def test_pending_approvals_only_returns_pending(client, fake_db):
     fake_db._tables["approvals"] = {
-        "a1": {"id": "a1", "workspace_id": WORKSPACE_ID, "status": "pending", "requested_at": "2026-01-01T00:00:00Z"},
-        "a2": {"id": "a2", "workspace_id": WORKSPACE_ID, "status": "approved", "requested_at": "2026-01-02T00:00:00Z"},
+        "a1": _approval_row("a1", "pending", "2026-01-01T00:00:00Z"),
+        "a2": _approval_row("a2", "approved", "2026-01-02T00:00:00Z"),
     }
     resp = client.get("/v1/mcp/pending-approvals", headers={"Authorization": "Bearer al_live_test"})
     assert resp.status_code == 200
-    assert [a["id"] for a in resp.json()] == ["a1"]
+    body = resp.json()
+    assert [a["approval_id"] for a in body] == ["a1"]
+    assert body[0]["agent_name"] == "ops-bot"
+    assert "ops-bot wants to run send_refund" in body[0]["summary"]
+
+
+def test_decide_approval_via_mcp_rejects_an_ordinary_key(client, fake_db):
+    # client fixture's default WorkspaceKeyAuth has can_review=False (the
+    # dataclass default) -- exactly an agent's own tracking key, which must
+    # never be able to decide its own pending approval.
+    fake_db._tables["approvals"]["a1"] = _approval_row("a1", "pending", "2026-01-01T00:00:00Z")
+
+    resp = client.post(
+        "/v1/mcp/approvals/a1/decide",
+        json={"decision": "approved"},
+        headers={"Authorization": "Bearer al_live_test"},
+    )
+
+    assert resp.status_code == 403
+    assert fake_db._tables["approvals"]["a1"]["status"] == "pending"
+
+
+def test_decide_approval_via_mcp_approves_with_a_reviewer_key(client, fake_db):
+    app.dependency_overrides[get_api_key_auth] = lambda: WorkspaceKeyAuth(
+        workspace_id=WORKSPACE_ID, api_key_id="key-1", can_review=True
+    )
+    fake_db._tables["api_keys"]["key-1"] = {"id": "key-1", "name": "my-claude-key"}
+    fake_db._tables["approvals"]["a1"] = _approval_row("a1", "pending", "2026-01-01T00:00:00Z")
+
+    resp = client.post(
+        "/v1/mcp/approvals/a1/decide",
+        json={"decision": "approved", "decision_note": "looks fine"},
+        headers={"Authorization": "Bearer al_live_test"},
+    )
+
+    assert resp.status_code == 200, resp.text
+    body = resp.json()
+    assert body["status"] == "approved"
+    assert body["decision_by"] == "my-claude-key (via Claude)"
+    assert fake_db._tables["approvals"]["a1"]["status"] == "approved"
 
 
 def test_draft_questionnaire_answers(client, fake_db):

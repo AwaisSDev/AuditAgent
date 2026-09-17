@@ -48,6 +48,11 @@ create table api_keys (
   name         text not null,
   key_prefix   text not null,        -- e.g. "al_live_ab12" — shown in the UI for identification
   key_hash     text not null,        -- sha256(secret), never the raw secret
+  -- Separate from ordinary agent-tracking privileges: an agent's own key
+  -- must never be able to decide its own pending approval (see mcp_data.py's
+  -- decide-via-MCP endpoint), so this defaults to false and is only set true
+  -- for a key a human explicitly creates for that purpose.
+  can_review   bool not null default false,
   created_by   uuid references auth.users(id),
   created_at   timestamptz not null default now(),
   last_used_at timestamptz,

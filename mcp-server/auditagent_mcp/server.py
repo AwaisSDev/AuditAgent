@@ -6,7 +6,7 @@ client (Claude, ChatGPT, Grok, ...), instead of opening the dashboard.
 This is a thin client over the same backend the SDK and dashboard use
 (app/routers/mcp_data.py) — no logic is duplicated here.
 
-Two ways to run this, both exposing the same four tools:
+Two ways to run this, both exposing the same five tools:
 
 - `run()` — stdio transport, for Claude Desktop/Claude Code running the
   server as a local subprocess. Single workspace per process: reads
@@ -117,6 +117,8 @@ class DataProvider(Protocol):
 
     async def get_pending_approvals(self, api_key: str) -> list[dict]: ...
 
+    async def decide_approval(self, api_key: str, approval_id: str, decision: str, note: str | None = None) -> dict: ...
+
     async def draft_questionnaire_answers(self, api_key: str, questions: list[str]) -> list[dict]: ...
 
     async def get_compliance_summary(self, api_key: str) -> dict: ...
@@ -209,11 +211,41 @@ async def get_recent_actions(limit: int = 20, action_type: str | None = None, st
 
 @mcp.tool()
 async def get_pending_approvals() -> list[dict]:
-    """Get all approval requests currently awaiting a human decision."""
+    """Get all approval requests currently awaiting a human decision.
+
+    Each item includes a ready-made `summary` sentence (e.g. "ops-agent
+    wants to run bulk_delete_records (external) with {...} — requested
+    ..., currently pending") plus the flattened fields it's built from
+    (agent_name, action_name, action_type, inputs_preview, status,
+    requested_at) and an `approval_id` to pass to `decide_approval`.
+    """
     api_key = _resolve_api_key()
     if _data_provider is not None:
         return await _data_provider.get_pending_approvals(api_key)
     return await anyio.to_thread.run_sync(lambda: client.get_pending_approvals(api_key))
+
+
+@mcp.tool()
+async def decide_approval(approval_id: str, decision: str, note: str | None = None) -> dict:
+    """Approve or reject a pending approval request, as the human reviewing
+    it in this conversation -- an alternative to clicking Approve/Reject in
+    the dashboard.
+
+    Requires a *reviewer* API key (created in Settings -> API keys with
+    "Can approve/reject" enabled). An ordinary agent-tracking key is
+    refused on purpose: an agent must never be able to decide its own
+    pending request, which is exactly what letting any key approve would
+    allow.
+
+    Args:
+        approval_id: the id from get_pending_approvals.
+        decision: "approved" or "rejected".
+        note: optional free-text reason, shown in the dashboard's audit trail.
+    """
+    api_key = _resolve_api_key()
+    if _data_provider is not None:
+        return await _data_provider.decide_approval(api_key, approval_id, decision, note)
+    return await anyio.to_thread.run_sync(lambda: client.decide_approval(api_key, approval_id, decision, note))
 
 
 @mcp.tool()

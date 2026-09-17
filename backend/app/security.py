@@ -30,6 +30,7 @@ class CurrentUser:
 class WorkspaceKeyAuth:
     workspace_id: str
     api_key_id: str
+    can_review: bool = False
 
 
 def _unauthorized(detail: str) -> HTTPException:
@@ -104,7 +105,7 @@ async def verify_api_key(api_key: str) -> WorkspaceKeyAuth | None:
     db = get_db()
     res = await run_db(
         lambda: db.table("api_keys")
-        .select("id, workspace_id, revoked_at, key_hash")
+        .select("id, workspace_id, revoked_at, key_hash, can_review")
         .eq("key_prefix", prefix)
         .limit(1)
         .execute()
@@ -125,7 +126,7 @@ async def verify_api_key(api_key: str) -> WorkspaceKeyAuth | None:
         .execute()
     )
 
-    return WorkspaceKeyAuth(workspace_id=row["workspace_id"], api_key_id=row["id"])
+    return WorkspaceKeyAuth(workspace_id=row["workspace_id"], api_key_id=row["id"], can_review=row["can_review"])
 
 
 async def get_api_key_auth(authorization: str | None = Header(default=None)) -> WorkspaceKeyAuth:

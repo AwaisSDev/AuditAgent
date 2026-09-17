@@ -58,3 +58,16 @@ def get_compliance_summary(api_key: str) -> dict:
         resp = client.get("/v1/mcp/compliance-summary")
         resp.raise_for_status()
         return resp.json()
+
+
+def decide_approval(api_key: str, approval_id: str, decision: str, note: str | None = None) -> dict:
+    with _client(api_key) as client:
+        resp = client.post(
+            f"/v1/mcp/approvals/{approval_id}/decide",
+            json={"decision": decision, "decision_note": note},
+        )
+        if resp.status_code >= 400:
+            # Surface the backend's actual reason (e.g. "this key can't
+            # review") instead of a bare "403 Forbidden".
+            raise RuntimeError(resp.json().get("detail", resp.text))
+        return resp.json()

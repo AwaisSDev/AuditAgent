@@ -131,12 +131,18 @@ class AgentOut(BaseModel):
 
 class ApiKeyCreateIn(BaseModel):
     name: str
+    # Off by default: a key an agent uses to log/track its own actions must
+    # never also be able to decide its own pending approvals. Only set this
+    # true for a key a human will actually hold (e.g. pasted into their own
+    # Claude/MCP connector) to review and decide other agents' requests.
+    can_review: bool = False
 
 
 class ApiKeyCreateOut(BaseModel):
     id: str
     name: str
     key_prefix: str
+    can_review: bool
     full_key: str  # only ever returned once, at creation time
 
 
@@ -144,6 +150,7 @@ class ApiKeyOut(BaseModel):
     id: str
     name: str
     key_prefix: str
+    can_review: bool
     created_at: datetime
     last_used_at: datetime | None
     revoked_at: datetime | None

@@ -15,8 +15,10 @@ overrides the `Depends(get_api_key_auth)` default, no HTTP request or
 FastAPI dependency-injection machinery involved.
 """
 
+from app.models.schemas import ApprovalDecision
 from app.routers.mcp_data import (
     compliance_summary,
+    decide_approval_via_mcp,
     draft_questionnaire_answers as _draft_questionnaire_answers,
     pending_approvals,
     recent_actions,
@@ -44,6 +46,12 @@ class BackendDataProvider:
     async def get_pending_approvals(self, api_key: str) -> list[dict]:
         auth = await self._auth(api_key)
         return await pending_approvals(auth=auth)
+
+    async def decide_approval(self, api_key: str, approval_id: str, decision: str, note: str | None = None) -> dict:
+        auth = await self._auth(api_key)
+        return await decide_approval_via_mcp(
+            approval_id, ApprovalDecision(decision=decision, decision_note=note), auth=auth
+        )
 
     async def draft_questionnaire_answers(self, api_key: str, questions: list[str]) -> list[dict]:
         auth = await self._auth(api_key)

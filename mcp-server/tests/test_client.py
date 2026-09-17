@@ -5,6 +5,8 @@ api_key, error propagation on a non-2xx response, and the "no API key"
 failure mode. Network calls are faked via httpx.MockTransport -- no real
 server involved."""
 
+import json
+
 import httpx
 import pytest
 
@@ -87,6 +89,30 @@ def test_get_pending_approvals_parses_the_response(monkeypatch):
     _install_transport(monkeypatch, lambda req: httpx.Response(200, json=[{"id": "appr-1", "status": "pending"}]))
 
     assert client.get_pending_approvals("al_live_test_key") == [{"id": "appr-1", "status": "pending"}]
+
+
+def test_decide_approval_posts_the_decision(monkeypatch):
+    captured = {}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        captured["body"] = json.loads(request.content)
+        captured["url"] = str(request.url)
+        return httpx.Response(200, json={"approval_id": "appr-1", "status": "approved"})
+
+    _install_transport(monkeypatch, handler)
+
+    result = client.decide_approval("al_live_test_key", "appr-1", "approved", "looks fine")
+
+    assert result == {"approval_id": "appr-1", "status": "approved"}
+    assert captured["url"].endswith("/v1/mcp/approvals/appr-1/decide")
+    assert captured["body"] == {"decision": "approved", "decision_note": "looks fine"}
+
+
+def test_decide_approval_raises_with_the_backend_detail_message(monkeypatch):
+    _install_transport(monkeypatch, lambda req: httpx.Response(403, json={"detail": "This API key isn't allowed to approve or reject actions."}))
+
+    with pytest.raises(RuntimeError, match="isn't allowed to approve"):
+        client.decide_approval("al_live_test_key", "appr-1", "approved")
 
 
 def test_draft_questionnaire_answers_posts_the_question_list(monkeypatch):

@@ -1,9 +1,23 @@
 # auditagent-mcp
 
-An MCP server exposing your AuditAgent workspace as four tools:
-`get_recent_actions`, `get_pending_approvals`, `draft_questionnaire_answers`,
-`get_compliance_summary`. Works from Claude, ChatGPT, Grok, or any other MCP
-client — two different ways to connect, depending on which:
+An MCP server exposing your AuditAgent workspace as five tools:
+`get_recent_actions`, `get_pending_approvals`, `decide_approval`,
+`draft_questionnaire_answers`, `get_compliance_summary`. Works from Claude,
+ChatGPT, Grok, or any other MCP client — two different ways to connect,
+depending on which:
+
+`get_pending_approvals` returns a ready-made `summary` sentence per item
+(e.g. "ops-agent wants to run bulk_delete_records (external) with
+{'count': 500} — requested ..., currently pending") alongside the flattened
+fields it's built from, so a conversation can relay it directly instead of
+narrating raw JSON.
+
+`decide_approval` lets you approve or reject one of those from inside the
+conversation, as an alternative to clicking through the dashboard — but only
+with a **reviewer** key: create one in Settings → API keys with "Can
+approve/reject" enabled. An ordinary agent-tracking key is refused on
+purpose, since an agent must never be able to decide its own pending
+request.
 
 ## Option A — hosted (Claude.ai web/mobile, ChatGPT, Grok)
 

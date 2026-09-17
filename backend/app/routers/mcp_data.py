@@ -6,13 +6,43 @@ it's a headless integration, not a signed-in user."""
 
 from datetime import datetime, timedelta, timezone
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 
 from app.db import get_db, run_db
+from app.models.schemas import ApprovalDecision
 from app.security import WorkspaceKeyAuth, get_api_key_auth
+from app.services.approvals_service import ApprovalAlreadyDecidedError, apply_decision
 from app.services.claude_client import draft_answer
 
 router = APIRouter(prefix="/v1/mcp", tags=["mcp"])
+
+
+def _summarize_approval(row: dict) -> dict:
+    """Flattens the nested `requested_action` blob into the fields a
+    conversation actually wants to say out loud, plus a ready-made sentence
+    -- so a client just relays `summary` instead of reconstructing one from
+    raw JSON (see the MCP server's get_pending_approvals docstring)."""
+    action = row["requested_action"]
+    agent_name = action.get("agent_name", "an agent")
+    action_name = action.get("action_name", "an action")
+    action_type = action.get("action_type", "unknown")
+    inputs_preview = action.get("inputs_preview", {})
+    return {
+        "approval_id": row["id"],
+        "agent_name": agent_name,
+        "action_name": action_name,
+        "action_type": action_type,
+        "inputs_preview": inputs_preview,
+        "status": row["status"],
+        "requested_at": row["requested_at"],
+        "decided_at": row.get("decided_at"),
+        "decision_by": row.get("decision_by"),
+        "decision_note": row.get("decision_note"),
+        "summary": (
+            f"{agent_name} wants to run {action_name} ({action_type}) with {inputs_preview} "
+            f"— requested {row['requested_at']}, currently {row['status']}"
+        ),
+    }
 
 
 @router.get("/recent-actions")
@@ -34,8 +64,12 @@ async def recent_actions(
 
 @router.get("/pending-approvals")
 async def pending_approvals(auth: WorkspaceKeyAuth = Depends(get_api_key_auth)) -> list[dict]:
+    """Human-readable, flattened shape (see `_summarize_approval`) rather
+    than the raw `approvals` row -- a conversational client (Claude via the
+    MCP server) can relay `summary` directly instead of narrating nested
+    JSON, and use `approval_id` with `decide_approval` below."""
     db = get_db()
-    return (
+    rows = (
         await run_db(
             lambda: db.table("approvals")
             .select("*")
@@ -45,6 +79,49 @@ async def pending_approvals(auth: WorkspaceKeyAuth = Depends(get_api_key_auth)) 
             .execute()
         )
     ).data
+    return [_summarize_approval(r) for r in rows]
+
+
+@router.post("/approvals/{approval_id}/decide")
+async def decide_approval_via_mcp(
+    approval_id: str,
+    decision: ApprovalDecision,
+    auth: WorkspaceKeyAuth = Depends(get_api_key_auth),
+) -> dict:
+    """Lets a human approve/reject a pending request from inside a
+    conversation instead of opening the dashboard. Gated on `can_review`,
+    a separate flag from ordinary key privileges (see api_keys.can_review
+    in schema.sql): an agent's own tracking key must never be able to
+    decide its own pending approval, which is exactly what a flat
+    "any API key can decide" rule would allow -- create a reviewer key in
+    Settings -> API keys, then use *that* key with your MCP connector."""
+    if not auth.can_review:
+        raise HTTPException(
+            status_code=403,
+            detail=(
+                "This API key isn't allowed to approve or reject actions. "
+                "Create a key with 'Can approve/reject' enabled in Settings -> API keys, "
+                "and use that key for your MCP connector instead."
+            ),
+        )
+    db = get_db()
+    key_row = (
+        await run_db(lambda: db.table("api_keys").select("name").eq("id", auth.api_key_id).single().execute())
+    ).data
+    decision_by = f"{key_row['name']} (via Claude)"
+    try:
+        updated = await apply_decision(
+            approval_id=approval_id,
+            decision=decision.decision,
+            decision_by=decision_by,
+            decision_note=decision.decision_note,
+            workspace_id=auth.workspace_id,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except ApprovalAlreadyDecidedError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    return _summarize_approval(updated)
 
 
 @router.post("/draft-questionnaire-answers")

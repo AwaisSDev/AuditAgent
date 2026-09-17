@@ -276,7 +276,14 @@ async def test_verify_api_key_returns_the_workspace_auth_for_a_valid_key(monkeyp
     from app.security import verify_api_key
 
     full_key, prefix, key_hash = generate_api_key()
-    row = {"id": "key-1", "workspace_id": "ws-1", "revoked_at": None, "key_hash": key_hash, "key_prefix": prefix}
+    row = {
+        "id": "key-1",
+        "workspace_id": "ws-1",
+        "revoked_at": None,
+        "key_hash": key_hash,
+        "key_prefix": prefix,
+        "can_review": False,
+    }
     monkeypatch.setattr("app.security.get_db", lambda: _FakeApiKeyDb([row]))
 
     auth = await verify_api_key(full_key)
@@ -284,12 +291,41 @@ async def test_verify_api_key_returns_the_workspace_auth_for_a_valid_key(monkeyp
     assert auth is not None
     assert auth.workspace_id == "ws-1"
     assert auth.api_key_id == "key-1"
+    assert auth.can_review is False
+
+
+@pytest.mark.anyio
+async def test_verify_api_key_propagates_can_review(monkeypatch):
+    from app.security import verify_api_key
+
+    full_key, prefix, key_hash = generate_api_key()
+    row = {
+        "id": "key-1",
+        "workspace_id": "ws-1",
+        "revoked_at": None,
+        "key_hash": key_hash,
+        "key_prefix": prefix,
+        "can_review": True,
+    }
+    monkeypatch.setattr("app.security.get_db", lambda: _FakeApiKeyDb([row]))
+
+    auth = await verify_api_key(full_key)
+
+    assert auth is not None
+    assert auth.can_review is True
 
 
 @pytest.mark.anyio
 async def test_get_api_key_auth_accepts_a_valid_key_and_updates_last_used(monkeypatch):
     full_key, prefix, key_hash = generate_api_key()
-    row = {"id": "key-1", "workspace_id": "ws-1", "revoked_at": None, "key_hash": key_hash, "key_prefix": prefix}
+    row = {
+        "id": "key-1",
+        "workspace_id": "ws-1",
+        "revoked_at": None,
+        "key_hash": key_hash,
+        "key_prefix": prefix,
+        "can_review": False,
+    }
     monkeypatch.setattr("app.security.get_db", lambda: _FakeApiKeyDb([row]))
 
     auth = await get_api_key_auth(authorization=f"Bearer {full_key}")
