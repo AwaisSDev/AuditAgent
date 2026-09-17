@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, HTTPException
+from postgrest.exceptions import APIError
 
 from app.config import get_settings
 from app.db import get_db, run_db
@@ -98,15 +99,31 @@ async def get_approval_status(
     approval_id: str,
     auth: WorkspaceKeyAuth = Depends(get_api_key_auth),
 ) -> ApprovalStatusOut:
+    """Polled every ~2s by every SDK call waiting on a decision (see
+    audagent/client.py's POLL_INTERVAL_SECONDS) -- for potentially several
+    concurrent agents at once, so this needs the same off-event-loop-thread
+    + retry-on-transient-failure treatment `run_db` gives every other DB
+    call, not a bare synchronous `.execute()`. Without it, a single dropped
+    connection to Supabase (which `run_db` exists specifically to smooth
+    over) surfaces as an unhandled 500 instead of a quiet retry, and the
+    SDK's own polling loop then aborts the whole approval wait on that one
+    blip even though the decision may already have been made."""
     db = get_db()
-    res = (
-        db.table("approvals")
-        .select("id, status, decision_by, decision_note, expires_at")
-        .eq("id", approval_id)
-        .eq("workspace_id", auth.workspace_id)
-        .single()
-        .execute()
-    )
+    try:
+        res = await run_db(
+            lambda: db.table("approvals")
+            .select("id, status, decision_by, decision_note, expires_at")
+            .eq("id", approval_id)
+            .eq("workspace_id", auth.workspace_id)
+            .single()
+            .execute()
+        )
+    except APIError as exc:
+        # postgrest's .single() raises (rather than returning data=None) when
+        # zero rows match -- e.g. an unknown id, or one from another
+        # workspace -- so this is the only way that case actually surfaces
+        # against the real client.
+        raise HTTPException(status_code=404, detail="Approval not found") from exc
     if not res.data:
         raise HTTPException(status_code=404, detail="Approval not found")
     return ApprovalStatusOut(**res.data)
@@ -126,7 +143,7 @@ async def list_approvals(
     q = db.table("approvals").select("*").eq("workspace_id", workspace_id).order("requested_at", desc=True)
     if status:
         q = q.eq("status", status)
-    return q.execute().data
+    return (await run_db(q.execute)).data
 
 
 @router.post("/workspaces/{workspace_id}/approvals/{approval_id}/decide", response_model=ApprovalOut)

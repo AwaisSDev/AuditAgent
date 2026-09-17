@@ -28,6 +28,22 @@ POLL_INTERVAL_SECONDS = 2.0
 MAX_CONSECUTIVE_POLL_ERRORS = 5
 
 
+def _is_transient_poll_error(exc: Exception) -> bool:
+    """A dropped connection is the obvious transient case, but a bare 5xx
+    from the backend belongs in the same bucket -- it means the *poll*
+    request failed, not that the decision itself didn't happen (that lives
+    in a separate row, decided independently of this GET). Treating a 5xx
+    as immediately fatal was aborting the whole approval wait -- raising
+    out of track() and skipping the outcome-logging call entirely -- on a
+    single backend hiccup, even when a human had already correctly decided
+    the request. A 4xx (bad key, approval genuinely not found) is a real
+    problem retrying won't fix, so only 5xx gets the same tolerance as a
+    transport-level failure."""
+    if isinstance(exc, httpx.HTTPStatusError):
+        return exc.response.status_code >= 500
+    return isinstance(exc, httpx.TransportError)
+
+
 class AuditAgent:
     """
         from audagent import AuditAgent
@@ -169,7 +185,9 @@ class AuditAgent:
                 try:
                     status_resp = client.get(f"{self.base_url}/v1/approvals/{approval_id}/status", headers=self._headers())
                     status_resp.raise_for_status()
-                except httpx.TransportError:
+                except (httpx.TransportError, httpx.HTTPStatusError) as exc:
+                    if not _is_transient_poll_error(exc):
+                        raise
                     consecutive_errors += 1
                     if consecutive_errors >= MAX_CONSECUTIVE_POLL_ERRORS:
                         raise
@@ -204,7 +222,9 @@ class AuditAgent:
                 try:
                     status_resp = await client.get(f"{self.base_url}/v1/approvals/{approval_id}/status", headers=self._headers())
                     status_resp.raise_for_status()
-                except httpx.TransportError:
+                except (httpx.TransportError, httpx.HTTPStatusError) as exc:
+                    if not _is_transient_poll_error(exc):
+                        raise
                     consecutive_errors += 1
                     if consecutive_errors >= MAX_CONSECUTIVE_POLL_ERRORS:
                         raise
