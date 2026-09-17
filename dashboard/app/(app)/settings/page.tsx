@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Bot, MessageCircleQuestion } from "lucide-react";
 import { api } from "@/lib/api";
 import { useWorkspace } from "@/lib/workspace-context";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,26 +10,10 @@ import { Input } from "@/components/ui/input";
 import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
 import { Dialog } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
 import { ThemeToggle } from "@/components/settings/theme-toggle";
-import { cn, formatDate } from "@/lib/utils";
+import { formatDate } from "@/lib/utils";
 import type { ApiKey } from "@/lib/types";
-
-const KEY_TYPES = [
-  {
-    id: "agent" as const,
-    canReview: false,
-    icon: Bot,
-    title: "Agent key",
-    blurb: "For an SDK-tracked agent to log and track its own actions. Can never decide its own pending request.",
-  },
-  {
-    id: "reviewer" as const,
-    canReview: true,
-    icon: MessageCircleQuestion,
-    title: "Reviewer key",
-    blurb: "For a human reviewing from Claude, ChatGPT, or another MCP client — can approve or reject pending requests.",
-  },
-];
 
 const PLANS = [
   { id: "starter", name: "Starter", price: "$49/mo", blurb: "5 agents, 50k events, 5 questionnaires/mo" },
@@ -162,29 +145,6 @@ function ApiKeysCard() {
         <CardTitle>API keys</CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
-        <div className="grid gap-2 sm:grid-cols-2">
-          {KEY_TYPES.map((t) => {
-            const Icon = t.icon;
-            const selected = canReview === t.canReview;
-            return (
-              <button
-                key={t.id}
-                type="button"
-                onClick={() => setCanReview(t.canReview)}
-                className={cn(
-                  "flex items-start gap-2.5 rounded-md border p-3 text-left transition-colors",
-                  selected ? "border-primary bg-muted" : "border-border hover:bg-muted"
-                )}
-              >
-                <Icon className="mt-0.5 h-[18px] w-[18px] shrink-0 text-muted-foreground" strokeWidth={1.75} />
-                <span className="min-w-0">
-                  <span className="block text-sm font-medium">{t.title}</span>
-                  <span className="block text-xs text-muted-foreground">{t.blurb}</span>
-                </span>
-              </button>
-            );
-          })}
-        </div>
         <div className="flex gap-2">
           <Input
             placeholder="Key name (e.g. production)"
@@ -195,6 +155,18 @@ function ApiKeysCard() {
           <Button size="sm" className="shrink-0" onClick={() => create.mutate()} disabled={!name || create.isPending}>
             Create key
           </Button>
+        </div>
+
+        <div className="flex items-start justify-between gap-3 rounded-md border border-border p-3">
+          <div className="min-w-0">
+            <p className="text-sm font-medium">Allow this key to approve or reject actions</p>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              Every key can log and track an agent's actions. Turn this on only if you'll also use this same key from
+              Claude, ChatGPT, or another MCP client to decide pending requests. Leave it off for a key an agent uses
+              on its own, so it can never decide its own pending request.
+            </p>
+          </div>
+          <Switch checked={canReview} onCheckedChange={setCanReview} />
         </div>
         {(create.isError || revoke.isError) && (
           <p className="text-[13px] text-error">
