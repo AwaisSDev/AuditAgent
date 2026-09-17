@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Bot, MessageCircleQuestion } from "lucide-react";
 import { api } from "@/lib/api";
 import { useWorkspace } from "@/lib/workspace-context";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,8 +12,25 @@ import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
 import { Dialog } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { ThemeToggle } from "@/components/settings/theme-toggle";
-import { formatDate } from "@/lib/utils";
+import { cn, formatDate } from "@/lib/utils";
 import type { ApiKey } from "@/lib/types";
+
+const KEY_TYPES = [
+  {
+    id: "agent" as const,
+    canReview: false,
+    icon: Bot,
+    title: "Agent key",
+    blurb: "For an SDK-tracked agent to log and track its own actions. Can never decide its own pending request.",
+  },
+  {
+    id: "reviewer" as const,
+    canReview: true,
+    icon: MessageCircleQuestion,
+    title: "Reviewer key",
+    blurb: "For a human reviewing from Claude, ChatGPT, or another MCP client — can approve or reject pending requests.",
+  },
+];
 
 const PLANS = [
   { id: "starter", name: "Starter", price: "$49/mo", blurb: "5 agents, 50k events, 5 questionnaires/mo" },
@@ -144,6 +162,29 @@ function ApiKeysCard() {
         <CardTitle>API keys</CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
+        <div className="grid gap-2 sm:grid-cols-2">
+          {KEY_TYPES.map((t) => {
+            const Icon = t.icon;
+            const selected = canReview === t.canReview;
+            return (
+              <button
+                key={t.id}
+                type="button"
+                onClick={() => setCanReview(t.canReview)}
+                className={cn(
+                  "flex items-start gap-2.5 rounded-md border p-3 text-left transition-colors",
+                  selected ? "border-primary bg-muted" : "border-border hover:bg-muted"
+                )}
+              >
+                <Icon className="mt-0.5 h-[18px] w-[18px] shrink-0 text-muted-foreground" strokeWidth={1.75} />
+                <span className="min-w-0">
+                  <span className="block text-sm font-medium">{t.title}</span>
+                  <span className="block text-xs text-muted-foreground">{t.blurb}</span>
+                </span>
+              </button>
+            );
+          })}
+        </div>
         <div className="flex gap-2">
           <Input
             placeholder="Key name (e.g. production)"
@@ -155,18 +196,6 @@ function ApiKeysCard() {
             Create key
           </Button>
         </div>
-        <label className="flex items-start gap-2 text-[13px] text-muted-foreground">
-          <input
-            type="checkbox"
-            checked={canReview}
-            onChange={(e) => setCanReview(e.target.checked)}
-            className="mt-0.5 h-4 w-4 shrink-0 accent-primary"
-          />
-          <span>
-            Can approve/reject actions (for a reviewer using Claude/MCP) — leave off for keys agents use to log and
-            track their own actions, so an agent can never decide its own pending request.
-          </span>
-        </label>
         {(create.isError || revoke.isError) && (
           <p className="text-[13px] text-error">
             {(create.error ?? revoke.error) instanceof Error
