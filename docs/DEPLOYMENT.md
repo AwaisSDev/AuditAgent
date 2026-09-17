@@ -31,7 +31,7 @@ Two services from the same repo (root directory `backend/`), sharing one Redis:
 
 | Service | Start command | Notes |
 |---|---|---|
-| `web` | (default, from `backend/Dockerfile`) `uvicorn app.main:app --host 0.0.0.0 --port $PORT` | Generate a public domain for this one → `api.auditagent.dev` |
+| `web` | (default, from `backend/Dockerfile`) `uvicorn app.main:app --host 0.0.0.0 --port $PORT` | Generate a public domain for this one — Railway's own `*.up.railway.app` domain works fine; `auditagent.dev` isn't owned |
 | `worker` | override to `arq app.worker.worker_settings.WorkerSettings` | No public domain needed |
 | `Redis` | Railway plugin | Gives both services `REDIS_URL` |
 
@@ -55,9 +55,9 @@ STRIPE_WEBHOOK_SECRET
 STRIPE_PRICE_STARTER
 STRIPE_PRICE_GROWTH
 STRIPE_PRICE_ENTERPRISE
-APP_BASE_URL=https://api.auditagent.dev
-DASHBOARD_BASE_URL=https://app.auditagent.dev
-CORS_ORIGINS=https://app.auditagent.dev
+APP_BASE_URL=https://awais1290-auditagent.hf.space  # or this Railway service's own domain
+DASHBOARD_BASE_URL=https://getauditagent.vercel.app
+CORS_ORIGINS=https://getauditagent.vercel.app
 APPROVAL_TIMEOUT_MINUTES=30
 ```
 
@@ -72,10 +72,11 @@ Root directory: `dashboard/`. Environment variables (see
 ```
 NEXT_PUBLIC_SUPABASE_URL
 NEXT_PUBLIC_SUPABASE_ANON_KEY
-NEXT_PUBLIC_API_BASE_URL=https://api.auditagent.dev
+NEXT_PUBLIC_API_BASE_URL=https://awais1290-auditagent.hf.space
 ```
 
-Domain: `app.auditagent.dev`, added under Vercel → Domains.
+Domain: no custom domain — `auditagent.dev` isn't owned, so the dashboard is
+used at its Vercel-assigned `https://getauditagent.vercel.app`.
 
 ## Database → Supabase
 

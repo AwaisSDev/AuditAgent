@@ -13,7 +13,7 @@ order; later steps depend on earlier ones.
 4. SQL Editor → paste and run [`supabase/schema.sql`](../supabase/schema.sql) in full.
 5. Storage → create a new **private** bucket named `questionnaires` (used by F4's upload flow).
 6. Authentication → Providers: enable **Email** (magic link) — it's on by default. Authentication → URL Configuration: add
-   `http://localhost:3000/auth/callback` and `https://app.auditagent.dev/auth/callback` as redirect URLs.
+   `http://localhost:3000/auth/callback` and `https://getauditagent.vercel.app/auth/callback` as redirect URLs.
 
 ## 2. Anthropic
 
@@ -56,19 +56,17 @@ order; later steps depend on earlier ones.
    arq app.worker.worker_settings.WorkerSettings
    ```
 4. Set the environment variables from `backend/.env.example` on **both** services (web and worker need the same config).
-5. Generate a public domain for the web service only (Settings → Networking) — this is your `APP_BASE_URL` / `api.auditagent.dev`.
+5. Generate a public domain for the web service only (Settings → Networking) — this is your `APP_BASE_URL`. (This project currently deploys the backend to a Hugging Face Space instead — see `docs/DEPLOYMENT.md` — whose URL serves the same purpose.)
 
 ## 7. Vercel (dashboard)
 
 1. Import this repo into Vercel, set **Root Directory** to `dashboard/`.
 2. Add the env vars from `dashboard/.env.local.example`.
-3. Point `auditagent.dev` / `app.auditagent.dev` at the Vercel project (Vercel → Domains).
+3. `auditagent.dev` was never bought, so there's no custom domain to point at Vercel — the dashboard is used directly at its `*.vercel.app` URL (currently `https://getauditagent.vercel.app`).
 
 ## 8. DNS
 
-At your registrar (or wherever `auditagent.dev` is managed):
-- `app.auditagent.dev` → CNAME to Vercel (Vercel's UI gives you the exact record once you add the domain).
-- `api.auditagent.dev` → CNAME to Railway's provided domain for the web service.
+Skipped for now — no domain is owned. `getauditagent.vercel.app` (dashboard) and the backend's HF Space URL are the real, permanent addresses until/unless a domain is bought later.
 
 ## 9. PyPI (F1 SDK + F6 MCP server) — done
 
@@ -100,5 +98,6 @@ runs over stdio, not remote HTTP.
 ## 10. First login
 
 Once Supabase, backend, and dashboard are all deployed: sign in at
-`app.auditagent.dev`, create your first workspace, create an API key under
-Settings, and use it with the SDK (`pip install AudAgent`) or MCP server.
+`https://getauditagent.vercel.app`, create your first workspace, create an
+API key under Settings, and use it with the SDK (`pip install AudAgent`) or
+MCP server.

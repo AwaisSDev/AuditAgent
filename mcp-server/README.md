@@ -11,10 +11,8 @@ These are hosted chat products with no local machine to run a server on, so
 they can only reach a server over the network, not installed via pip. This
 server is already mounted at `/mcp` on the deployed backend (see
 `backend/app/main.py`) — add `<your backend's base URL>/mcp` as a custom
-connector (e.g. `https://api.auditagent.dev/mcp` once that domain's DNS is
-pointed at the deployed backend — see `docs/MANUAL_SETUP.md`'s DNS step; until
-then, use whatever URL the backend is actually reachable at, e.g. the Hugging
-Face Space's `https://<you>-<space>.hf.space/mcp`):
+connector, e.g. this deployment's Hugging Face Space:
+`https://awais1290-auditagent.hf.space/mcp`:
 
 - **Claude.ai**: Settings → Connectors → Add custom connector → paste the URL,
   and use your AuditAgent API key (Settings → API keys in the dashboard) as
@@ -41,7 +39,7 @@ dashboard, then set:
 
 ```bash
 export AUDITAGENT_API_KEY=al_live_...
-export AUDITAGENT_BASE_URL=https://api.auditagent.dev   # optional, this is the default
+export AUDITAGENT_BASE_URL=https://awais1290-auditagent.hf.space   # optional, this is the default
 ```
 
 Add to your MCP config (Claude Desktop: `claude_desktop_config.json`; Claude

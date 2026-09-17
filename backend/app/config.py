@@ -34,7 +34,9 @@ class Settings(BaseSettings):
     slack_bot_token: str = ""
     slack_signing_secret: str = ""
 
-    # Email fallback (Resend)
+    # Email fallback (Resend) -- Resend requires a verified sending domain,
+    # and auditagent.dev isn't owned, so this default won't actually send
+    # until EMAIL_FROM is set to a domain you control.
     resend_api_key: str = ""
     email_from: str = "alerts@auditagent.dev"
 
@@ -45,10 +47,11 @@ class Settings(BaseSettings):
     stripe_price_growth: str = ""
     stripe_price_enterprise: str = ""
 
-    # App
-    app_base_url: str = "https://api.auditagent.dev"
-    dashboard_base_url: str = "https://app.auditagent.dev"
-    cors_origins: str = "http://localhost:3000,https://app.auditagent.dev,https://getauditagent.vercel.app"
+    # App -- auditagent.dev was never bought; these are the actual domains in
+    # use (HF Space backend, Vercel-hosted dashboard), not placeholders.
+    app_base_url: str = "https://awais1290-auditagent.hf.space"
+    dashboard_base_url: str = "https://getauditagent.vercel.app"
+    cors_origins: str = "http://localhost:3000,https://getauditagent.vercel.app"
     approval_timeout_minutes: int = 30
 
     @property

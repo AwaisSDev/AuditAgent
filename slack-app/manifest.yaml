@@ -18,7 +18,7 @@ settings:
   interactivity:
     is_enabled: true
     # Replace with your deployed backend URL before installing.
-    request_url: https://api.auditagent.dev/v1/slack/interactions
+    request_url: https://awais1290-auditagent.hf.space/v1/slack/interactions
   org_deploy_enabled: false
   socket_mode_enabled: false
   token_rotation_enabled: false

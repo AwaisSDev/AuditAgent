@@ -7,8 +7,8 @@ roadmap.
 
 ## 1. Create your account and workspace
 
-1. Go to `app.auditagent.dev` and sign in with your work email (magic link
-   — no password to set).
+1. Go to `https://getauditagent.vercel.app` and sign in with your work email
+   (magic link — no password to set).
 2. On first login you'll be asked to name a workspace. One workspace per
    team/product is typical; you can create more later from the workspace
    switcher in the sidebar.

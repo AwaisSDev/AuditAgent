@@ -36,8 +36,8 @@ classifiers = [
 dev = ["pytest>=8.0", "mypy>=1.10", "types-PyYAML"]
 
 [project.urls]
-Homepage = "https://auditagent.dev"
-Documentation = "https://auditagent.dev/docs"
+Homepage = "https://getauditagent.vercel.app"
+Documentation = "https://getauditagent.vercel.app/docs"
 
 [project.scripts]
 audagent = "audagent.cli:main"
