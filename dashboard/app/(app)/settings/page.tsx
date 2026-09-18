@@ -2,6 +2,7 @@
 
 import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import Script from "next/script";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { PartyPopper } from "lucide-react";
 import { api } from "@/lib/api";
@@ -320,13 +321,15 @@ function ApiKeysCard() {
 
 function BillingCard() {
   const { workspace } = useWorkspace();
+  const [checkoutSession, setCheckoutSession] = useState<{ id: string; environment: "sandbox" | "production" } | null>(null);
 
   const checkout = useMutation({
     mutationFn: (plan: string) =>
-      api.post<{ checkout_url: string }>(`/v1/workspaces/${workspace!.id}/billing/checkout`, { plan }),
-    onSuccess: (res) => {
-      window.location.href = res.checkout_url;
-    },
+      api.post<{ checkout_url: string; checkout_configuration_id: string; environment: "sandbox" | "production" }>(
+        `/v1/workspaces/${workspace!.id}/billing/checkout`,
+        { plan }
+      ),
+    onSuccess: (res) => setCheckoutSession({ id: res.checkout_configuration_id, environment: res.environment }),
   });
 
   return (
@@ -366,13 +369,48 @@ function BillingCard() {
                   disabled={workspace?.plan === p.id || checkout.isPending}
                   onClick={() => checkout.mutate(p.id)}
                 >
-                  {workspace?.plan === p.id ? "Current plan" : "Upgrade"}
+                  {workspace?.plan === p.id ? "Current plan" : checkout.isPending ? "Loading..." : "Upgrade"}
                 </Button>
               )}
             </div>
           ))}
         </div>
       </CardContent>
+
+      <Dialog open={!!checkoutSession} onClose={() => setCheckoutSession(null)} title="Complete your purchase">
+        {checkoutSession && <EmbeddedCheckout key={checkoutSession.id} {...checkoutSession} />}
+      </Dialog>
     </Card>
+  );
+}
+
+function EmbeddedCheckout({ id, environment }: { id: string; environment: "sandbox" | "production" }) {
+  // Whop's loader script scans the DOM for data-whop-checkout-* attributes
+  // once it loads and mounts an iframe into this div -- see
+  // docs.whop.com/payments/checkout-embed. Card, Apple Pay, Google Pay, and
+  // whatever else you enabled for these plans in the Whop dashboard all
+  // show up automatically; nothing to configure on this end for that.
+  //
+  // It defaults to Whop's own "production" environment regardless of which
+  // account the plan id actually belongs to (confirmed live: a sandbox
+  // plan id embedded without this renders Whop's own "page does not
+  // exist" inside the iframe), so the backend tells us which one to pass.
+  //
+  // Theme: read once at mount, not reactively -- matches whatever
+  // light/dark this dashboard is already in (see lib/theme.ts) rather than
+  // Whop's own default, so the embed doesn't clash with the rest of the
+  // app; a mid-checkout theme toggle is edge-case enough not to chase.
+  const isDark = typeof document !== "undefined" && document.documentElement.classList.contains("dark");
+  return (
+    <>
+      <Script src="https://js.whop.com/static/checkout/loader.js" strategy="afterInteractive" />
+      <div
+        data-whop-checkout-session={id}
+        data-whop-checkout-environment={environment}
+        data-whop-checkout-theme={isDark ? "dark" : "light"}
+        data-whop-checkout-theme-border-radius="8px"
+        style={{ minHeight: 520 }}
+      />
+    </>
   );
 }

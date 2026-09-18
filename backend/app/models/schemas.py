@@ -213,3 +213,13 @@ class CheckoutSessionIn(BaseModel):
 
 class CheckoutSessionOut(BaseModel):
     checkout_url: str
+    # Powers the embedded checkout (data-whop-checkout-session) so upgrading
+    # doesn't leave the dashboard; checkout_url stays as a fallback (e.g. if
+    # the embed script fails to load) since it's still a real, working link.
+    checkout_configuration_id: str
+    # The embed script defaults to "production" regardless of which API
+    # base URL the configuration was actually created against (confirmed
+    # live: a sandbox plan id embedded without this renders Whop's own
+    # "page does not exist" inside the iframe) -- so the frontend needs to
+    # be told explicitly which one this session belongs to.
+    environment: Literal["sandbox", "production"]

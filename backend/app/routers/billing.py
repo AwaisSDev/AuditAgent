@@ -9,7 +9,9 @@ from app.models.schemas import CheckoutSessionIn, CheckoutSessionOut
 from app.security import CurrentUser, require_workspace_member
 from app.services.whop_client import (
     BillingNotConfiguredError,
+    cancel_membership,
     create_checkout_session,
+    environment,
     get_checkout_configuration,
     get_membership,
     plan_for_whop_plan_id,
@@ -28,7 +30,7 @@ async def create_checkout(
     try:
         # httpx's sync Client is used here (see whop_client.py) -- off the
         # event loop the same way stripe-python's own sync client was.
-        url = await asyncio.to_thread(create_checkout_session, workspace_id, body.plan, user.email)
+        session = await asyncio.to_thread(create_checkout_session, workspace_id, body.plan, user.email)
     except BillingNotConfiguredError as exc:
         # Without this, an unhandled exception here produces a 500 that
         # Starlette sends without CORS headers, which the browser blocks
@@ -37,7 +39,9 @@ async def create_checkout(
         raise HTTPException(status_code=503, detail=str(exc)) from exc
     except httpx.HTTPStatusError as exc:
         raise HTTPException(status_code=502, detail=f"Whop rejected the request: {exc.response.text}") from exc
-    return CheckoutSessionOut(checkout_url=url)
+    return CheckoutSessionOut(
+        checkout_url=session["purchase_url"], checkout_configuration_id=session["id"], environment=environment()
+    )
 
 
 @router.post("/billing/whop/webhook")
@@ -85,6 +89,26 @@ async def whop_webhook(request: Request) -> dict:
     db = get_db()
     if event_type == "membership.activated":
         plan = metadata.get("plan") or plan_for_whop_plan_id(membership.get("plan", {}).get("id", ""))
+
+        # A workspace buying a new plan while a *different* membership is
+        # still on file means an upgrade/downgrade, not a first purchase --
+        # without canceling the old one, both stay active and billing in
+        # parallel (confirmed live: the same account ended up with a
+        # Starter and a Pro payment both succeeded back to back).
+        existing = await run_db(
+            lambda: db.table("subscriptions").select("whop_membership_id").eq("workspace_id", workspace_id).execute()
+        )
+        old_membership_id = existing.data[0]["whop_membership_id"] if existing.data else None
+        if old_membership_id and old_membership_id != membership_id:
+            try:
+                await asyncio.to_thread(cancel_membership, old_membership_id)
+            except httpx.HTTPStatusError:
+                # Already canceled/expired on Whop's side, or some other
+                # non-fatal rejection -- don't let cleanup of the OLD
+                # membership block activating the NEW one, which is what
+                # actually matters to the workspace right now.
+                pass
+
         await _upsert_whop_subscription(db, workspace_id=workspace_id, whop_membership_id=membership_id, plan=plan, status="active")
     else:
         await _upsert_whop_subscription(db, workspace_id=workspace_id, whop_membership_id=membership_id, plan="free", status="canceled")

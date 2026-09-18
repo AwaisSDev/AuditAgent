@@ -15,9 +15,15 @@ from app.services.whop_client import BillingNotConfiguredError
 WORKSPACE_ID = "ws-1"
 
 
+class _FakeResult:
+    def __init__(self, data):
+        self.data = data
+
+
 class _FakeQuery:
     def __init__(self, table, op, payload=None):
         self.table = table
+        self.name = table.name
         self.op = op
         self.payload = payload
         self.filters = {}
@@ -35,10 +41,15 @@ class _FakeQuery:
             return None
 
         if self.op == "update":
-            matches = [r for r in rows.get("workspaces", {}).values() if all(r.get(k) == v for k, v in self.filters.items())]
+            matches = [r for r in rows.get(self.name, {}).values() if all(r.get(k) == v for k, v in self.filters.items())]
             for r in matches:
                 r.update(self.payload)
             return None
+
+        if self.op == "select":
+            table_rows = rows.get(self.name, {})
+            matches = [r for r in table_rows.values() if all(r.get(k) == v for k, v in self.filters.items())]
+            return _FakeResult(matches)
 
         raise AssertionError(f"unhandled op {self.op}")
 
@@ -52,13 +63,14 @@ class _FakeTable:
     def rows(self):
         return self.all_rows
 
+    def select(self, *_a, **_kw):
+        return _FakeQuery(self, "select")
+
     def upsert(self, payload, on_conflict=None):
         return _FakeQuery(self, "upsert", payload)
 
     def update(self, payload):
-        q = _FakeQuery(self, "update", payload)
-        q._table_name = self.name
-        return q
+        return _FakeQuery(self, "update", payload)
 
 
 class _FakeDb:
@@ -108,11 +120,16 @@ def test_checkout_surfaces_a_whop_error_as_502(client):
     assert "declined" in resp.json()["detail"]
 
 
-def test_checkout_returns_the_session_url_on_success(client):
-    with patch("app.routers.billing.create_checkout_session", return_value="https://sandbox.whop.com/checkout/ch_xyz"):
+def test_checkout_returns_the_session_url_and_configuration_id_on_success(client):
+    session = {"id": "ch_xyz", "purchase_url": "https://sandbox.whop.com/checkout/ch_xyz"}
+    with patch("app.routers.billing.create_checkout_session", return_value=session):
         resp = client.post(f"/v1/workspaces/{WORKSPACE_ID}/billing/checkout", json={"plan": "starter"})
     assert resp.status_code == 200
-    assert resp.json()["checkout_url"] == "https://sandbox.whop.com/checkout/ch_xyz"
+    body = resp.json()
+    assert body["checkout_url"] == "https://sandbox.whop.com/checkout/ch_xyz"
+    # Default whop_api_base_url (config.py) is the sandbox endpoint.
+    assert body["environment"] == "sandbox"
+    assert body["checkout_configuration_id"] == "ch_xyz"
 
 
 def _whop_headers():
@@ -179,6 +196,54 @@ def test_webhook_falls_back_to_the_checkout_configuration_when_membership_has_no
     assert resp.status_code == 200
     assert fake_db._tables["workspaces"][WORKSPACE_ID]["plan"] == "starter"
     get_config.assert_called_once_with("ch_1")
+
+
+def test_webhook_cancels_the_previous_membership_on_upgrade(fake_db):
+    # Confirmed live: without this, buying a new plan while a different one
+    # is still active just adds a second active membership billing in
+    # parallel instead of replacing it.
+    fake_db._tables["subscriptions"][WORKSPACE_ID] = {"workspace_id": WORKSPACE_ID, "whop_membership_id": "mem_old", "status": "active"}
+    event = {"type": "membership.activated", "data": {"id": "mem_new"}}
+    membership = {"id": "mem_new", "metadata": {"workspace_id": WORKSPACE_ID, "plan": "pro"}, "plan": {"id": "plan_pro"}}
+    with patch("app.routers.billing.verify_webhook", return_value=event), \
+         patch("app.routers.billing.get_membership", return_value=membership), \
+         patch("app.routers.billing.cancel_membership") as mock_cancel:
+        with TestClient(app) as c:
+            resp = c.post("/v1/billing/whop/webhook", content=b"{}", headers=_whop_headers())
+
+    assert resp.status_code == 200
+    mock_cancel.assert_called_once_with("mem_old")
+    assert fake_db._tables["subscriptions"][WORKSPACE_ID]["whop_membership_id"] == "mem_new"
+    assert fake_db._tables["workspaces"][WORKSPACE_ID]["plan"] == "pro"
+
+
+def test_webhook_does_not_cancel_when_reactivating_the_same_membership(fake_db):
+    fake_db._tables["subscriptions"][WORKSPACE_ID] = {"workspace_id": WORKSPACE_ID, "whop_membership_id": "mem_123", "status": "active"}
+    event = {"type": "membership.activated", "data": {"id": "mem_123"}}
+    membership = {"id": "mem_123", "metadata": {"workspace_id": WORKSPACE_ID, "plan": "starter"}, "plan": {"id": "plan_starter"}}
+    with patch("app.routers.billing.verify_webhook", return_value=event), \
+         patch("app.routers.billing.get_membership", return_value=membership), \
+         patch("app.routers.billing.cancel_membership") as mock_cancel:
+        with TestClient(app) as c:
+            resp = c.post("/v1/billing/whop/webhook", content=b"{}", headers=_whop_headers())
+
+    assert resp.status_code == 200
+    mock_cancel.assert_not_called()
+
+
+def test_webhook_still_activates_the_new_plan_if_canceling_the_old_one_fails(fake_db):
+    fake_db._tables["subscriptions"][WORKSPACE_ID] = {"workspace_id": WORKSPACE_ID, "whop_membership_id": "mem_old", "status": "active"}
+    event = {"type": "membership.activated", "data": {"id": "mem_new"}}
+    membership = {"id": "mem_new", "metadata": {"workspace_id": WORKSPACE_ID, "plan": "pro"}, "plan": {"id": "plan_pro"}}
+    cancel_error = httpx.HTTPStatusError("already canceled", request=httpx.Request("POST", "https://x"), response=httpx.Response(404))
+    with patch("app.routers.billing.verify_webhook", return_value=event), \
+         patch("app.routers.billing.get_membership", return_value=membership), \
+         patch("app.routers.billing.cancel_membership", side_effect=cancel_error):
+        with TestClient(app) as c:
+            resp = c.post("/v1/billing/whop/webhook", content=b"{}", headers=_whop_headers())
+
+    assert resp.status_code == 200
+    assert fake_db._tables["workspaces"][WORKSPACE_ID]["plan"] == "pro"
 
 
 def test_webhook_membership_deactivated_downgrades_to_free(fake_db):

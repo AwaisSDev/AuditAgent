@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
-import { History, CircleCheck, FileText, ShieldCheck, BadgeCheck, Settings, LogOut, X } from "lucide-react";
+import { History, CircleCheck, FileText, ShieldCheck, BadgeCheck, Settings, LogOut, Sparkles, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { createSupabaseBrowserClient } from "@/lib/supabase-browser";
 import { WorkspaceSwitcher } from "@/components/nav/workspace-switcher";
@@ -98,6 +98,16 @@ export function Sidebar({ open, onClose }: { open?: boolean; onClose?: () => voi
         </nav>
 
         <div className="border-t border-border px-3 py-3">
+          {workspace && !["pro", "enterprise"].includes(workspace.plan) && (
+            <Link
+              href="/settings"
+              onClick={onClose}
+              className="mb-1 flex items-center gap-3 rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90"
+            >
+              <Sparkles className="h-[18px] w-[18px] shrink-0" strokeWidth={1.75} />
+              Upgrade plan
+            </Link>
+          )}
           <button
             onClick={signOut}
             className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
