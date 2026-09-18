@@ -87,6 +87,19 @@ class PolicyOut(BaseModel):
     updated_at: datetime
 
 
+class PolicyDraftIn(BaseModel):
+    instruction: str
+
+
+class PolicyDraftOut(BaseModel):
+    # None when the instruction can't be expressed as a rule (see
+    # policy_drafter.py) -- the frontend shows `explanation` instead of a
+    # diff in that case, rather than a proposal that would silently do
+    # nothing once applied.
+    proposed_yaml: str | None
+    explanation: str
+
+
 # ---------------------------------------------------------------------------
 # Approvals (F3)
 # ---------------------------------------------------------------------------

@@ -73,6 +73,11 @@ export interface Policy {
   updated_at: string;
 }
 
+export interface PolicyDraft {
+  proposed_yaml: string | null;
+  explanation: string;
+}
+
 export interface Questionnaire {
   id: string;
   workspace_id: string;

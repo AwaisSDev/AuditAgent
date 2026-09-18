@@ -3,14 +3,16 @@
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import yaml from "js-yaml";
-import { FileCode, Check, Mail, Trash2, Database, Cog, ChevronRight } from "lucide-react";
+import { FileCode, Check, Mail, Trash2, Database, Cog, ChevronRight, Sparkles } from "lucide-react";
 import { api } from "@/lib/api";
 import { cn } from "@/lib/utils";
+import { diffLines } from "@/lib/diff-lines";
 import { useWorkspace } from "@/lib/workspace-context";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { RULE_DEFS, DEFAULT_TOGGLES, togglesToYaml, yamlToToggles, isSimpleYaml, type ToggleState } from "@/lib/policy-rules";
-import type { Policy } from "@/lib/types";
+import type { Policy, PolicyDraft } from "@/lib/types";
 
 const ICONS: Record<string, typeof Mail> = {
   delete_data: Trash2,
@@ -26,6 +28,8 @@ export default function PolicyPage() {
   const [advancedOpen, setAdvancedOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
+  const [instruction, setInstruction] = useState("");
+  const [proposal, setProposal] = useState<PolicyDraft | null>(null);
 
   const { data: policy, isLoading } = useQuery({
     queryKey: ["policy", workspace?.id],
@@ -57,6 +61,21 @@ export default function PolicyPage() {
     }
   }
 
+  const draftFromInstruction = useMutation({
+    mutationFn: () => api.post<PolicyDraft>(`/v1/workspaces/${workspace!.id}/policy/draft`, { instruction }),
+    onSuccess: (result) => setProposal(result),
+    onError: (e: Error) => setProposal({ proposed_yaml: null, explanation: e.message }),
+  });
+
+  function applyProposal() {
+    if (!proposal?.proposed_yaml) return;
+    setDraft(proposal.proposed_yaml);
+    handleSave(proposal.proposed_yaml);
+    setProposal(null);
+    setInstruction("");
+    setAdvancedOpen(true); // the applied rule may not fit the 4 simple toggles -- show the real YAML
+  }
+
   const toggles: ToggleState = yamlToToggles(draft) ?? DEFAULT_TOGGLES;
   const hasCustomRules = draft.trim() !== "" && !isSimpleYaml(draft);
 
@@ -74,6 +93,65 @@ export default function PolicyPage() {
           Choose which kinds of things your AI agent does need a person's okay before they happen. Everything else
           runs on its own.
         </p>
+      </div>
+
+      <div className="space-y-3 rounded-lg border border-border p-4">
+        <div className="flex items-center gap-1.5 text-[13px] font-medium text-muted-foreground">
+          <Sparkles className="h-3.5 w-3.5" strokeWidth={1.75} />
+          Describe a policy change in plain English
+        </div>
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <Input
+            placeholder="e.g. Require approval before deleting a customer account"
+            value={instruction}
+            onChange={(e) => setInstruction(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && instruction.trim() && !draftFromInstruction.isPending) draftFromInstruction.mutate();
+            }}
+            className="flex-1"
+          />
+          <Button
+            onClick={() => draftFromInstruction.mutate()}
+            disabled={!instruction.trim() || draftFromInstruction.isPending || !policy}
+          >
+            {draftFromInstruction.isPending ? "Thinking..." : "Draft change"}
+          </Button>
+        </div>
+
+        {proposal && !proposal.proposed_yaml && (
+          <p className="rounded-md bg-muted px-3 py-2 text-[13px] text-muted-foreground">{proposal.explanation}</p>
+        )}
+
+        {proposal?.proposed_yaml && (
+          <div className="space-y-2 rounded-md border border-border">
+            <p className="border-b border-border bg-muted/60 px-3 py-2 text-[13px] text-muted-foreground">
+              {proposal.explanation}
+            </p>
+            <pre className="overflow-x-auto px-3 py-2 font-mono text-[13px] leading-relaxed">
+              {diffLines(draft, proposal.proposed_yaml).map((line, i) => (
+                <div
+                  key={i}
+                  className={cn(
+                    "px-1",
+                    line.type === "add" && "bg-[#DBEDDB] text-[#2F5D3A] dark:bg-[#1F3D2B] dark:text-[#8FCBA3]",
+                    line.type === "remove" && "bg-error/15 text-error line-through"
+                  )}
+                >
+                  {line.type === "add" ? "+ " : line.type === "remove" ? "- " : "  "}
+                  {line.text}
+                </div>
+              ))}
+            </pre>
+            <div className="flex justify-end gap-2 border-t border-border px-3 py-2">
+              <Button variant="outline" size="sm" onClick={() => setProposal(null)}>
+                Discard
+              </Button>
+              <Button size="sm" onClick={applyProposal}>
+                Apply
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
 
       {isLoading || !policy ? (

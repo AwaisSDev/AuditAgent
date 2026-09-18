@@ -5,6 +5,7 @@ malformed YAML is rejected with a 400 rather than corrupting the stored
 policy or crashing."""
 
 from datetime import datetime, timezone
+from unittest.mock import AsyncMock
 
 import pytest
 from fastapi.testclient import TestClient
@@ -153,3 +154,31 @@ def test_sdk_policy_endpoint_requires_an_api_key(fake_db):
     with TestClient(app) as c:
         resp = c.get("/v1/sdk/policy")
     assert resp.status_code == 401
+
+
+def test_draft_policy_endpoint_returns_the_drafter_result(client, monkeypatch):
+    from app.services.policy_drafter import PolicyDraft
+
+    async def _fake_draft(instruction, current_yaml):
+        assert instruction == "require approval for deletes"
+        assert current_yaml == DEFAULT_POLICY_YAML  # no policy stored yet -> falls back to default
+        return PolicyDraft(proposed_yaml="rules: []\n", explanation="did the thing")
+
+    monkeypatch.setattr("app.routers.policies.draft_policy", _fake_draft)
+
+    resp = client.post(f"/v1/workspaces/{WORKSPACE_ID}/policy/draft", json={"instruction": "require approval for deletes"})
+    assert resp.status_code == 200, resp.text
+    assert resp.json() == {"proposed_yaml": "rules: []\n", "explanation": "did the thing"}
+
+
+def test_draft_policy_endpoint_never_writes_to_the_stored_policy(client, fake_db, monkeypatch):
+    from app.services.policy_drafter import PolicyDraft
+
+    monkeypatch.setattr("app.routers.policies.draft_policy", AsyncMock(return_value=PolicyDraft(proposed_yaml="rules: []\n", explanation="x")))
+
+    client.post(f"/v1/workspaces/{WORKSPACE_ID}/policy/draft", json={"instruction": "anything"})
+
+    # The GET above (inside the endpoint, to fetch current_yaml) creates the
+    # default row on first read -- that's the only row draft should cause.
+    assert len(fake_db._tables["policies"]) == 1
+    assert fake_db._tables["policies"][next(iter(fake_db._tables["policies"]))]["rules_yaml"] == DEFAULT_POLICY_YAML

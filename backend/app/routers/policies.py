@@ -3,8 +3,9 @@ from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException
 
 from app.db import get_db, run_db
-from app.models.schemas import PolicyIn, PolicyOut
+from app.models.schemas import PolicyDraftIn, PolicyDraftOut, PolicyIn, PolicyOut
 from app.security import CurrentUser, WorkspaceKeyAuth, get_api_key_auth, require_workspace_member
+from app.services.policy_drafter import draft_policy
 from app.services.policy_engine import DEFAULT_POLICY_YAML, PolicyParseError, parse_policy
 
 router = APIRouter(prefix="/v1", tags=["policies"])
@@ -71,3 +72,15 @@ async def update_policy(
         lambda: db.table("policies").insert({"workspace_id": workspace_id, "name": body.name, "rules_yaml": body.rules_yaml}).execute()
     )
     return created.data[0]
+
+
+# Proposes a YAML edit from a plain-English instruction -- never writes to
+# the database itself. The dashboard shows the diff and calls PUT /policy
+# above only once the user confirms it.
+@router.post("/workspaces/{workspace_id}/policy/draft", response_model=PolicyDraftOut)
+async def draft_policy_from_instruction(
+    workspace_id: str, body: PolicyDraftIn, user: CurrentUser = Depends(require_workspace_member)
+) -> PolicyDraftOut:
+    current = await get_policy(workspace_id, user)
+    draft = await draft_policy(body.instruction, current["rules_yaml"])
+    return PolicyDraftOut(proposed_yaml=draft.proposed_yaml, explanation=draft.explanation)
