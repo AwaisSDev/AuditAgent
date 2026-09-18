@@ -161,6 +161,26 @@ def test_webhook_membership_activated_falls_back_to_plan_id_lookup(fake_db):
     assert fake_db._tables["workspaces"][WORKSPACE_ID]["plan"] == "pro"
 
 
+def test_webhook_falls_back_to_the_checkout_configuration_when_membership_has_no_metadata(fake_db):
+    # Whop's docs claim a checkout configuration's metadata is copied onto
+    # the membership it produces -- this test is for when that turns out
+    # not to hold (confirmed live once already for two other claims about
+    # this same API): the membership itself carries none, so the handler
+    # must fetch the checkout configuration and use its metadata instead.
+    event = {"type": "membership.activated", "data": {"id": "mem_123"}}
+    membership = {"id": "mem_123", "metadata": {}, "plan": {"id": "plan_starter_id"}, "checkout_configuration_id": "ch_1"}
+    checkout_config = {"id": "ch_1", "metadata": {"workspace_id": WORKSPACE_ID, "plan": "starter"}}
+    with patch("app.routers.billing.verify_webhook", return_value=event), \
+         patch("app.routers.billing.get_membership", return_value=membership), \
+         patch("app.routers.billing.get_checkout_configuration", return_value=checkout_config) as get_config:
+        with TestClient(app) as c:
+            resp = c.post("/v1/billing/whop/webhook", content=b"{}", headers=_whop_headers())
+
+    assert resp.status_code == 200
+    assert fake_db._tables["workspaces"][WORKSPACE_ID]["plan"] == "starter"
+    get_config.assert_called_once_with("ch_1")
+
+
 def test_webhook_membership_deactivated_downgrades_to_free(fake_db):
     fake_db._tables["workspaces"][WORKSPACE_ID]["plan"] = "pro"
     event = {"type": "membership.deactivated", "data": {"id": "mem_123"}}

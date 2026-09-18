@@ -100,3 +100,20 @@ body {
     background-position: -150% 0;
   }
 }
+
+/* A satisfying overshoot-then-settle pop, not a plain fade -- this is the
+   one moment in the app that should feel celebratory rather than merely
+   functional (see PaymentSuccessDialog in the settings page). */
+@keyframes pop-in {
+  0% {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+  60% {
+    opacity: 1;
+    transform: scale(1.08);
+  }
+  100% {
+    transform: scale(1);
+  }
+}

@@ -90,7 +90,12 @@ def create_checkout_session(workspace_id: str, plan: str, customer_email: str) -
             "plan_id": whop_plan_id_for(plan),
             "mode": "payment",
             "metadata": {"workspace_id": workspace_id, "plan": plan},
-            "redirect_url": f"{settings.dashboard_base_url}/settings?billing=success",
+            # `plan` here is ours, not Whop's -- lets the success page show
+            # the right plan name immediately instead of waiting on the
+            # webhook (which can lag the redirect by a few seconds) just to
+            # know what was purchased. Whop appends its own params
+            # (payment_id, receipt_id, ...) on top of this, doesn't replace it.
+            "redirect_url": f"{settings.dashboard_base_url}/settings?billing=success&plan={plan}",
         },
         timeout=15.0,
     )
@@ -105,6 +110,21 @@ def get_membership(membership_id: str) -> dict:
     handler needs this follow-up call to actually see metadata/plan/status."""
     settings = get_settings()
     resp = httpx.get(f"{settings.whop_api_base_url}/memberships/{membership_id}", headers=_headers(), timeout=15.0)
+    resp.raise_for_status()
+    return resp.json()
+
+
+def get_checkout_configuration(checkout_configuration_id: str) -> dict:
+    """Fallback source of truth for metadata (see billing.py's webhook
+    handler): docs claim a checkout configuration's metadata is copied onto
+    the membership/payment it produces, but that's exactly the kind of
+    claim this integration has already gotten burned trusting without
+    confirmation once -- the configuration itself definitely has it,
+    since create_checkout_session is what set it."""
+    settings = get_settings()
+    resp = httpx.get(
+        f"{settings.whop_api_base_url}/checkout_configurations/{checkout_configuration_id}", headers=_headers(), timeout=15.0
+    )
     resp.raise_for_status()
     return resp.json()
 

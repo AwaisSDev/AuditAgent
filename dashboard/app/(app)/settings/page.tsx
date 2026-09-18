@@ -1,7 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { PartyPopper } from "lucide-react";
 import { api } from "@/lib/api";
 import { useWorkspace } from "@/lib/workspace-context";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,7 +14,7 @@ import { Dialog } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { ThemeToggle } from "@/components/settings/theme-toggle";
-import { formatDate } from "@/lib/utils";
+import { cn, formatDate } from "@/lib/utils";
 import type { ApiKey } from "@/lib/types";
 
 const PLANS = [
@@ -29,7 +31,66 @@ export default function SettingsPage() {
       <WorkspaceSettingsCard />
       <ApiKeysCard />
       <BillingCard />
+      <Suspense fallback={null}>
+        <PaymentSuccessDialog />
+      </Suspense>
     </div>
+  );
+}
+
+const PLAN_NAMES: Record<string, string> = { starter: "Starter", pro: "Pro", enterprise: "Enterprise" };
+
+function PaymentSuccessDialog() {
+  const { workspace } = useWorkspace();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const [open, setOpen] = useState(false);
+  const [purchasedPlan, setPurchasedPlan] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (searchParams.get("billing") !== "success") return;
+    setPurchasedPlan(searchParams.get("plan"));
+    setOpen(true);
+    // Strip the query string so a refresh doesn't re-trigger this, without
+    // losing the values already captured into state above.
+    router.replace("/settings");
+  }, [searchParams, router]);
+
+  // The webhook that actually flips workspace.plan can lag a few seconds
+  // behind Whop's redirect back here -- poll briefly while the dialog is
+  // open so "activating" can turn into a confirmed checkmark instead of
+  // just claiming success before the backend has caught up.
+  const confirmed = !!purchasedPlan && workspace?.plan === purchasedPlan;
+  const { data: polledWorkspace } = useQuery({
+    queryKey: ["workspaces", "billing-poll"],
+    queryFn: () => api.get<{ plan: string }[]>("/v1/workspaces"),
+    enabled: open && !confirmed,
+    refetchInterval: 2000,
+  });
+  const activated = confirmed || polledWorkspace?.some((w) => w.plan === purchasedPlan);
+
+  if (!open) return null;
+
+  return (
+    <Dialog open={open} onClose={() => setOpen(false)} title="">
+      <div className="flex flex-col items-center py-4 text-center">
+        <div
+          className="flex h-14 w-14 items-center justify-center rounded-full bg-[#DBEDDB] text-[#2F5D3A] dark:bg-[#1F3D2B] dark:text-[#8FCBA3]"
+          style={{ animation: "pop-in 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)" }}
+        >
+          <PartyPopper className="h-7 w-7" strokeWidth={1.75} />
+        </div>
+        <h2 className="mt-4 text-lg font-semibold tracking-tight">Payment successful</h2>
+        <p className={cn("mt-1 text-sm text-muted-foreground", !activated && "animate-pulse")}>
+          {activated
+            ? `You're on the ${PLAN_NAMES[purchasedPlan ?? ""] ?? purchasedPlan} plan now.`
+            : `Activating your ${PLAN_NAMES[purchasedPlan ?? ""] ?? purchasedPlan} plan...`}
+        </p>
+        <Button size="sm" className="mt-5 w-full" onClick={() => setOpen(false)}>
+          Done
+        </Button>
+      </div>
+    </Dialog>
   );
 }
 
