@@ -120,16 +120,11 @@ def test_checkout_surfaces_a_whop_error_as_502(client):
     assert "declined" in resp.json()["detail"]
 
 
-def test_checkout_returns_the_session_url_and_configuration_id_on_success(client):
-    session = {"id": "ch_xyz", "purchase_url": "https://sandbox.whop.com/checkout/ch_xyz"}
-    with patch("app.routers.billing.create_checkout_session", return_value=session):
+def test_checkout_returns_the_session_url_on_success(client):
+    with patch("app.routers.billing.create_checkout_session", return_value="https://sandbox.whop.com/checkout/ch_xyz"):
         resp = client.post(f"/v1/workspaces/{WORKSPACE_ID}/billing/checkout", json={"plan": "starter"})
     assert resp.status_code == 200
-    body = resp.json()
-    assert body["checkout_url"] == "https://sandbox.whop.com/checkout/ch_xyz"
-    # Default whop_api_base_url (config.py) is the sandbox endpoint.
-    assert body["environment"] == "sandbox"
-    assert body["checkout_configuration_id"] == "ch_xyz"
+    assert resp.json()["checkout_url"] == "https://sandbox.whop.com/checkout/ch_xyz"
 
 
 def _whop_headers():

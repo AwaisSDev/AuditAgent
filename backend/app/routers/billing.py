@@ -11,7 +11,6 @@ from app.services.whop_client import (
     BillingNotConfiguredError,
     cancel_membership,
     create_checkout_session,
-    environment,
     get_checkout_configuration,
     get_membership,
     plan_for_whop_plan_id,
@@ -30,7 +29,7 @@ async def create_checkout(
     try:
         # httpx's sync Client is used here (see whop_client.py) -- off the
         # event loop the same way stripe-python's own sync client was.
-        session = await asyncio.to_thread(create_checkout_session, workspace_id, body.plan, user.email)
+        url = await asyncio.to_thread(create_checkout_session, workspace_id, body.plan, user.email)
     except BillingNotConfiguredError as exc:
         # Without this, an unhandled exception here produces a 500 that
         # Starlette sends without CORS headers, which the browser blocks
@@ -39,9 +38,7 @@ async def create_checkout(
         raise HTTPException(status_code=503, detail=str(exc)) from exc
     except httpx.HTTPStatusError as exc:
         raise HTTPException(status_code=502, detail=f"Whop rejected the request: {exc.response.text}") from exc
-    return CheckoutSessionOut(
-        checkout_url=session["purchase_url"], checkout_configuration_id=session["id"], environment=environment()
-    )
+    return CheckoutSessionOut(checkout_url=url)
 
 
 @router.post("/billing/whop/webhook")

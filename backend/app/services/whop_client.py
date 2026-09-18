@@ -62,26 +62,15 @@ def plan_for_whop_plan_id(plan_id: str) -> str | None:
     return mapping.get(plan_id)
 
 
-def _is_sandbox(settings) -> bool:
-    return "sandbox" in settings.whop_api_base_url
-
-
 def _checkout_origin(settings) -> str:
     # purchase_url comes back as a path relative to whop.com/sandbox.whop.com
     # (confirmed live: "/checkout/ch_xxx/"), not the api./sandbox-api. host
     # requests are actually made against -- so it has to be derived
     # separately rather than assumed to already be absolute.
-    return "https://sandbox.whop.com" if _is_sandbox(settings) else "https://whop.com"
+    return "https://sandbox.whop.com" if "sandbox" in settings.whop_api_base_url else "https://whop.com"
 
 
-def environment() -> str:
-    """Which value to pass as data-whop-checkout-environment on the
-    dashboard's embed -- see create_checkout_session's docstring for why
-    this can't just be assumed."""
-    return "sandbox" if _is_sandbox(get_settings()) else "production"
-
-
-def create_checkout_session(workspace_id: str, plan: str, customer_email: str) -> dict[str, str]:
+def create_checkout_session(workspace_id: str, plan: str, customer_email: str) -> str:
     """Creates a one-off checkout configuration referencing one of the two
     plans created in the Whop dashboard, carrying workspace_id/plan as
     metadata -- Whop copies a checkout configuration's metadata onto the
@@ -92,12 +81,7 @@ def create_checkout_session(workspace_id: str, plan: str, customer_email: str) -
     Uses the "existing plan_id" variant of this endpoint's request schema
     (it's a oneOf: inline plan details, an existing plan_id, or "setup"
     mode) -- plan_id and mode are both required for that variant;
-    account_id is only required for the unrelated "setup" mode.
-
-    Returns both the configuration id (for the embedded checkout --
-    routers/billing.py hands it to the dashboard as
-    data-whop-checkout-session) and the hosted purchase_url as a fallback
-    in case the embed script fails to load."""
+    account_id is only required for the unrelated "setup" mode."""
     settings = get_settings()
     resp = httpx.post(
         f"{settings.whop_api_base_url}/checkout_configurations",
@@ -116,11 +100,8 @@ def create_checkout_session(workspace_id: str, plan: str, customer_email: str) -
         timeout=15.0,
     )
     resp.raise_for_status()
-    body = resp.json()
-    purchase_url = body["purchase_url"]
-    if not purchase_url.startswith("http"):
-        purchase_url = f"{_checkout_origin(settings)}{purchase_url}"
-    return {"id": body["id"], "purchase_url": purchase_url}
+    purchase_url = resp.json()["purchase_url"]
+    return purchase_url if purchase_url.startswith("http") else f"{_checkout_origin(settings)}{purchase_url}"
 
 
 def get_membership(membership_id: str) -> dict:

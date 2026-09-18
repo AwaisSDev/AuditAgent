@@ -20,7 +20,6 @@ from app.services.whop_client import (
     BillingNotConfiguredError,
     cancel_membership,
     create_checkout_session,
-    environment,
     get_membership,
     plan_for_whop_plan_id,
     verify_webhook,
@@ -87,9 +86,9 @@ def test_create_checkout_session_posts_the_plan_id_and_metadata(monkeypatch):
     fake_response.raise_for_status = MagicMock()
 
     with patch("app.services.whop_client.httpx.post", return_value=fake_response) as mock_post:
-        session = create_checkout_session("ws-1", "starter", "user@example.com")
+        url = create_checkout_session("ws-1", "starter", "user@example.com")
 
-    assert session == {"id": "ch_xyz", "purchase_url": "https://sandbox.whop.com/checkout/ch_xyz"}
+    assert url == "https://sandbox.whop.com/checkout/ch_xyz"
     assert mock_post.call_args.args[0].endswith("/checkout_configurations")
     kwargs = mock_post.call_args.kwargs
     assert kwargs["json"]["plan_id"] == "plan_starter"
@@ -108,10 +107,9 @@ def test_create_checkout_session_resolves_a_relative_purchase_url(monkeypatch):
     fake_response.raise_for_status = MagicMock()
 
     with patch("app.services.whop_client.httpx.post", return_value=fake_response):
-        session = create_checkout_session("ws-1", "starter", "user@example.com")
+        url = create_checkout_session("ws-1", "starter", "user@example.com")
 
-    assert session["purchase_url"] == "https://sandbox.whop.com/checkout/ch_xyz/"
-    assert session["id"] == "ch_xyz"
+    assert url == "https://sandbox.whop.com/checkout/ch_xyz/"
 
 
 def test_get_membership_fetches_by_id(monkeypatch):
@@ -137,18 +135,6 @@ def test_cancel_membership_posts_immediate_cancellation(monkeypatch):
 
     assert mock_post.call_args.args[0].endswith("/memberships/mem_old/cancel")
     assert mock_post.call_args.kwargs["json"] == {"cancellation_mode": "immediate"}
-
-
-def test_environment_reflects_the_sandbox_api_base_url(monkeypatch):
-    monkeypatch.setattr("app.services.whop_client.get_settings", lambda: _settings())
-    assert environment() == "sandbox"
-
-
-def test_environment_reflects_the_production_api_base_url(monkeypatch):
-    monkeypatch.setattr(
-        "app.services.whop_client.get_settings", lambda: _settings(whop_api_base_url="https://api.whop.com/api/v1")
-    )
-    assert environment() == "production"
 
 
 def test_verify_webhook_raises_when_not_configured(monkeypatch):
