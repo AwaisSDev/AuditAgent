@@ -24,12 +24,10 @@ router = APIRouter(prefix="/v1", tags=["billing"])
 async def create_checkout(
     workspace_id: str, body: CheckoutSessionIn, user: CurrentUser = Depends(require_workspace_member)
 ) -> CheckoutSessionOut:
-    if not user.email:
-        raise HTTPException(status_code=400, detail="Account has no email on file")
     try:
         # httpx's sync Client is used here (see whop_client.py) -- off the
         # event loop the same way stripe-python's own sync client was.
-        url = await asyncio.to_thread(create_checkout_session, workspace_id, body.plan, user.email)
+        url = await asyncio.to_thread(create_checkout_session, workspace_id, body.plan)
     except BillingNotConfiguredError as exc:
         # Without this, an unhandled exception here produces a 500 that
         # Starlette sends without CORS headers, which the browser blocks

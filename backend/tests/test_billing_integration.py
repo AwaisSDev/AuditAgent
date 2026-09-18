@@ -96,16 +96,6 @@ def client(fake_db):
     app.dependency_overrides.clear()
 
 
-def test_checkout_requires_the_user_to_have_an_email(monkeypatch):
-    app.dependency_overrides[require_workspace_member] = lambda: CurrentUser(id="user-1", email=None)
-    try:
-        with TestClient(app) as c:
-            resp = c.post(f"/v1/workspaces/{WORKSPACE_ID}/billing/checkout", json={"plan": "starter"})
-    finally:
-        app.dependency_overrides.clear()
-    assert resp.status_code == 400
-
-
 def test_checkout_surfaces_billing_not_configured_as_503(client):
     with patch("app.routers.billing.create_checkout_session", side_effect=BillingNotConfiguredError("no key")):
         resp = client.post(f"/v1/workspaces/{WORKSPACE_ID}/billing/checkout", json={"plan": "starter"})

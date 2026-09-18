@@ -70,7 +70,7 @@ def _checkout_origin(settings) -> str:
     return "https://sandbox.whop.com" if "sandbox" in settings.whop_api_base_url else "https://whop.com"
 
 
-def create_checkout_session(workspace_id: str, plan: str, customer_email: str) -> str:
+def create_checkout_session(workspace_id: str, plan: str) -> str:
     """Creates a one-off checkout configuration referencing one of the two
     plans created in the Whop dashboard, carrying workspace_id/plan as
     metadata -- Whop copies a checkout configuration's metadata onto the

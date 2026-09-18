@@ -76,7 +76,7 @@ def test_plan_for_whop_plan_id_maps_both_directions(monkeypatch):
 def test_create_checkout_session_raises_when_billing_not_configured(monkeypatch):
     monkeypatch.setattr("app.services.whop_client.get_settings", lambda: _settings(whop_api_key=""))
     with pytest.raises(BillingNotConfiguredError):
-        create_checkout_session("ws-1", "starter", "user@example.com")
+        create_checkout_session("ws-1", "starter")
 
 
 def test_create_checkout_session_posts_the_plan_id_and_metadata(monkeypatch):
@@ -86,7 +86,7 @@ def test_create_checkout_session_posts_the_plan_id_and_metadata(monkeypatch):
     fake_response.raise_for_status = MagicMock()
 
     with patch("app.services.whop_client.httpx.post", return_value=fake_response) as mock_post:
-        url = create_checkout_session("ws-1", "starter", "user@example.com")
+        url = create_checkout_session("ws-1", "starter")
 
     assert url == "https://sandbox.whop.com/checkout/ch_xyz"
     assert mock_post.call_args.args[0].endswith("/checkout_configurations")
@@ -107,7 +107,7 @@ def test_create_checkout_session_resolves_a_relative_purchase_url(monkeypatch):
     fake_response.raise_for_status = MagicMock()
 
     with patch("app.services.whop_client.httpx.post", return_value=fake_response):
-        url = create_checkout_session("ws-1", "starter", "user@example.com")
+        url = create_checkout_session("ws-1", "starter")
 
     assert url == "https://sandbox.whop.com/checkout/ch_xyz/"
 
