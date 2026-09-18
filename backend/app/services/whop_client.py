@@ -129,14 +129,43 @@ def get_checkout_configuration(checkout_configuration_id: str) -> dict:
     return resp.json()
 
 
+def _candidate_secret_keys(secret: str) -> list[bytes]:
+    """What HMAC key Whop actually means by "the secret" turned out not to
+    match this integration's first two guesses (see verify_webhook's
+    docstring history) -- confirmed live, the dashboard shows a "ws_"
+    prefix, not the "whsec_" the Standard Webhooks spec's own examples use,
+    and base64-decoding the whole "ws_..." string (prefix included) fails
+    with "Incorrect padding" on every delivery, which was exactly the 400
+    every attempt got. Rather than lock in a third specific guess, generate
+    every plausible key derivation -- verify_webhook tries each one and
+    accepts the first that produces a matching signature. This doesn't
+    weaken anything: an attacker without the real secret still can't
+    produce a signature that matches under any candidate."""
+    stripped = secret
+    for prefix in ("whsec_", "ws_"):
+        if secret.startswith(prefix):
+            stripped = secret[len(prefix) :]
+            break
+
+    candidates = [secret.encode(), stripped.encode()]
+    for value in (secret, stripped):
+        padded = value + "=" * (-len(value) % 4)
+        for decoder in (base64.b64decode, base64.urlsafe_b64decode):
+            try:
+                candidates.append(decoder(padded, validate=True) if decoder is base64.b64decode else decoder(padded))
+            except ValueError:
+                pass
+    return candidates
+
+
 def verify_webhook(payload: bytes, webhook_id: str, webhook_timestamp: str, webhook_signature: str) -> dict:
     """Whop signs webhooks per the Standard Webhooks specification (the
     same open scheme Svix popularized -- see
-    https://github.com/standard-webhooks/standard-webhooks), not a
-    Whop-specific format: HMAC-SHA256 over "{id}.{timestamp}.{raw body}"
-    using the base64 portion of the "whsec_..." secret as the key, base64
-    the result, and match it against one of the (possibly several,
-    space-separated) "v1,<sig>" entries in the webhook-signature header.
+    https://github.com/standard-webhooks/standard-webhooks): HMAC-SHA256
+    over "{id}.{timestamp}.{raw body}", base64 the result, match it against
+    one of the (possibly several, space-separated) "v1,<sig>" entries in
+    the webhook-signature header. See _candidate_secret_keys for why the
+    HMAC key itself is tried multiple ways rather than one fixed encoding.
     Raises ValueError on any failure -- caller turns that into a 400."""
     settings = get_settings()
     if not settings.whop_webhook_secret:
@@ -151,13 +180,15 @@ def verify_webhook(payload: bytes, webhook_id: str, webhook_timestamp: str, webh
     if age > _WEBHOOK_TOLERANCE_SECONDS:
         raise ValueError("Webhook timestamp outside the tolerance window")
 
-    secret = settings.whop_webhook_secret
-    secret_bytes = base64.b64decode(secret[len("whsec_") :] if secret.startswith("whsec_") else secret)
     signed_content = f"{webhook_id}.{webhook_timestamp}.".encode() + payload
-    expected = base64.b64encode(hmac.new(secret_bytes, signed_content, hashlib.sha256).digest()).decode()
+    sig_candidates = [part.split(",", 1)[1] for part in webhook_signature.split() if part.startswith("v1,") and "," in part]
 
-    candidates = [part.split(",", 1)[1] for part in webhook_signature.split() if part.startswith("v1,") and "," in part]
-    if not any(hmac.compare_digest(expected, candidate) for candidate in candidates):
+    matched = any(
+        hmac.compare_digest(base64.b64encode(hmac.new(key, signed_content, hashlib.sha256).digest()).decode(), sig)
+        for key in _candidate_secret_keys(settings.whop_webhook_secret)
+        for sig in sig_candidates
+    )
+    if not matched:
         raise ValueError("Webhook signature mismatch")
 
     return json.loads(payload)

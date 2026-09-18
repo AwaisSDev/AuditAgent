@@ -130,6 +130,25 @@ def test_verify_webhook_raises_when_not_configured(monkeypatch):
         verify_webhook(b"{}", "msg_1", str(int(time.time())), "v1,bogus")
 
 
+def test_verify_webhook_accepts_a_ws_prefixed_secret_used_as_raw_bytes(monkeypatch):
+    # This is the actual bug hit live: a "ws_"-prefixed secret whose
+    # remainder isn't valid base64 (previously: base64-decoding the whole
+    # "ws_..." string raised "Incorrect padding" on every single delivery).
+    # Covers the case where the key is just the raw bytes after the prefix.
+    secret = "ws_07d33-not-valid-base64-f4"
+    settings = _settings(whop_webhook_secret=secret)
+    monkeypatch.setattr("app.services.whop_client.get_settings", lambda: settings)
+    body = b'{"type": "membership.activated"}'
+    timestamp = str(int(time.time()))
+    stripped = secret[len("ws_") :]
+    signed_content = f"msg_1.{timestamp}.".encode() + body
+    sig = base64.b64encode(hmac.new(stripped.encode(), signed_content, hashlib.sha256).digest()).decode()
+
+    event = verify_webhook(body, "msg_1", timestamp, f"v1,{sig}")
+
+    assert event["type"] == "membership.activated"
+
+
 def test_verify_webhook_accepts_a_correctly_signed_payload(monkeypatch):
     settings = _settings()
     monkeypatch.setattr("app.services.whop_client.get_settings", lambda: settings)
