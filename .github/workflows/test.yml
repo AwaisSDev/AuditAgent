@@ -1,7 +1,7 @@
 name: Test
 
 # Runs the parts of the test suite that don't need live Supabase/Anthropic/
-# Slack/Stripe credentials: the SDK's full suite, the backend's full suite
+# Slack/Whop credentials: the SDK's full suite, the backend's full suite
 # (every router/service, 97%+ line coverage, all against an in-memory fake
 # database), the MCP server's suite (its HTTP client against a mocked
 # transport, tool registration/argument-forwarding), and the dashboard's

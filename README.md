@@ -114,5 +114,5 @@ pip install -e .
 ```
 
 See [`docs/MANUAL_SETUP.md`](docs/MANUAL_SETUP.md) for every account/dashboard
-step (Supabase project, Slack app, Stripe products, PyPI, DNS) and
+step (Supabase project, Slack app, Whop plans, PyPI, DNS) and
 [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) for shipping to Railway + Vercel.

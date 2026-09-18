@@ -16,7 +16,6 @@ anthropic==0.36.2
 google-auth>=2.0  # resolves the SDK's lazy vertex extra when tooling introspects loaded objects
 slack_sdk==3.33.1
 aiohttp==3.10.10
-stripe==11.1.1
 python-docx==1.1.2
 openpyxl==3.1.5
 pypdf==5.0.1

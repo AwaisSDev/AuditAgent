@@ -1,4 +1,4 @@
-"""Whop billing -- replaces Stripe as the active checkout provider.
+"""Whop billing -- the checkout provider.
 
 Setup (see docs/MANUAL_SETUP.md once this ships): create two plans on
 whop.com (or sandbox.whop.com for testing) named Starter and Pro, copy

@@ -111,12 +111,9 @@ provision (a business/vendor choice, not a code gap). Originally dated
 These need an account, a vendor choice, or a business decision from you —
 none of them are something to write code for on your behalf:
 
-- **Stripe products/prices** — `STRIPE_SECRET_KEY` and the three price IDs
-  are unset in the real environment used this session. The checkout flow
-  now fails *cleanly* (a real bug fixed this session — see prior summary),
-  but nobody can actually subscribe until you create the products in your
-  own Stripe dashboard and set the env vars (`docs/MANUAL_SETUP.md` already
-  documents the exact steps).
+- ~~Stripe products/prices~~ — superseded: billing moved to Whop
+  (`docs/MANUAL_SETUP.md` documents the current setup steps), and it's
+  live and working in the Whop sandbox as of this update.
 - **Slack app** — `SLACK_BOT_TOKEN`/`SLACK_SIGNING_SECRET` are unset;
   approvals fall back silently to "decide in the dashboard" until you
   install the Slack app (`slack-app/manifest.yaml`, `docs/MANUAL_SETUP.md`).
@@ -143,9 +140,9 @@ none of them are something to write code for on your behalf:
 
 ## Suggested order if you want to keep going
 
-1. Decide on Stripe/Slack/error-tracking now if you want them live for
-   launch, since each is a vendor signup + a few env vars, not a code
-   change.
+1. Decide on Slack/error-tracking now if you want them live for launch
+   (Whop billing is already live), since each is a vendor signup + a few
+   env vars, not a code change.
 2. A real-device pass (one iPhone Safari, one Android Chrome) on the
    signup -> workspace -> SDK event -> approval -> questionnaire flow this
    session already validated against real infra.

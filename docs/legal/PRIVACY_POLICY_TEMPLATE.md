@@ -34,8 +34,8 @@ information in connection with the AuditAgent Service.
 - **Uploaded questionnaires (F4):** files you upload are stored in a
   private Supabase Storage bucket and processed to draft answers; you
   control export and never a third party without your action.
-- **Billing information:** handled entirely by Stripe — we store your
-  Stripe customer/subscription IDs, not your card details.
+- **Billing information:** handled entirely by Whop — we store your
+  Whop membership ID, not your card details.
 - **Usage/log data:** standard web server logs (IP, user agent, request
   path) for security and debugging.
 
@@ -43,7 +43,7 @@ information in connection with the AuditAgent Service.
 
 To operate, maintain, and improve the Service; to communicate with you
 about your account, approvals awaiting a decision, or service changes; to
-process payment (via Stripe); and to comply with legal obligations.
+process payment (via Whop); and to comply with legal obligations.
 
 We do not sell Customer Data, and we do not use it to train models beyond
 what's needed to generate your own questionnaire answers and redaction
@@ -57,7 +57,7 @@ passes at the time you use those features.
 | Anthropic      | Second-pass redaction (Haiku), questionnaire answer drafting (Sonnet) | Event content sent for redaction/drafting only |
 | Resend         | Transactional email (approval requests, timeout notices) | Recipient email, agent/action names |
 | Slack          | Approval notifications (only if you connect it) | Agent/action names, your workspace's chosen channel |
-| Stripe         | Payment processing | Billing contact info, subscription status |
+| Whop           | Payment processing | Billing contact info, subscription status |
 | `[Railway / your host]` | Application hosting | All of the above, in transit/at rest |
 
 `[Keep this table in sync with reality — if you add or remove a vendor,

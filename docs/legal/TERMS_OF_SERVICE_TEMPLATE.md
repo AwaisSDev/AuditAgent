@@ -57,7 +57,7 @@ circumvent usage limits associated with your plan.
 
 ### 5. Fees and payment
 
-Paid plans are billed `[monthly/annually]` in advance via `[Stripe]`.
+Paid plans are billed monthly in advance via Whop.
 Fees are non-refundable except as required by law or as we agree in
 writing. We may change pricing with `[notice period]` notice, effective
 at your next billing cycle.

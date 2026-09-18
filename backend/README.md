@@ -42,7 +42,7 @@ Optional, each feature degrades gracefully without it:
 | `ANTHROPIC_API_KEY` | second-pass PII redaction and evidence-pack drafting |
 | `SLACK_BOT_TOKEN`, `SLACK_SIGNING_SECRET` | approvals in Slack (otherwise email) |
 | `RESEND_API_KEY`, `EMAIL_FROM` | email approvals |
-| `STRIPE_*` | billing |
+| `WHOP_*` | billing |
 | `SUPABASE_JWT_SECRET` | only for older Supabase projects with the legacy HS256 secret |
 | `REDIS_URL` | an external Redis; unset means the in-container one |
 

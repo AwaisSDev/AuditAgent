@@ -37,10 +37,6 @@ order; later steps depend on earlier ones.
 
 ## 5. Whop (F9)
 
-Whop is the active billing provider (Stripe's integration still exists but
-is dormant -- see backend/app/services/stripe_client.py -- in case that
-ever changes back).
-
 1. Create an account at whop.com, or sandbox.whop.com for a test account
    that never charges anyone (same steps either way -- see `docs/DEPLOYMENT.md`
    for how sandbox vs. production differ).
