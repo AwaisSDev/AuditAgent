@@ -34,11 +34,11 @@ class Settings(BaseSettings):
     slack_bot_token: str = ""
     slack_signing_secret: str = ""
 
-    # Email fallback (Resend) -- Resend requires a verified sending domain,
-    # and auditagent.dev isn't owned, so this default won't actually send
-    # until EMAIL_FROM is set to a domain you control.
+    # Email fallback (Resend) -- Resend requires a verified sending domain.
+    # auditagent.cloud is owned now, but this default won't actually send
+    # until that domain is verified in Resend and EMAIL_FROM is updated.
     resend_api_key: str = ""
-    email_from: str = "alerts@auditagent.dev"
+    email_from: str = "alerts@auditagent.cloud"
 
     # Whop -- the billing provider. whop_api_base_url points at the
     # sandbox by default (https://sandbox-api.whop.com/api/v1); switch it to
@@ -51,11 +51,17 @@ class Settings(BaseSettings):
     whop_plan_starter: str = ""
     whop_plan_pro: str = ""
 
-    # App -- auditagent.dev was never bought; these are the actual domains in
-    # use (HF Space backend, Vercel-hosted dashboard), not placeholders.
+    # Error tracking (Sentry) -- unset by default (see main.py's sentry_sdk.init
+    # call, guarded on this being non-empty) until a real DSN from a Sentry
+    # project is provided.
+    sentry_dsn: str = ""
+    sentry_environment: str = "production"
+
+    # App -- backend stays on the HF Space URL; auditagent.cloud is the
+    # dashboard's custom domain (attached in Vercel, DNS verified).
     app_base_url: str = "https://awais1290-auditagent.hf.space"
-    dashboard_base_url: str = "https://getauditagent.vercel.app"
-    cors_origins: str = "http://localhost:3000,https://getauditagent.vercel.app"
+    dashboard_base_url: str = "https://auditagent.cloud"
+    cors_origins: str = "http://localhost:3000,https://auditagent.cloud,https://www.auditagent.cloud,https://getauditagent.vercel.app"
     approval_timeout_minutes: int = 30
 
     @property

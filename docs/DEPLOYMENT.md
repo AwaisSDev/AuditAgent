@@ -31,7 +31,7 @@ Two services from the same repo (root directory `backend/`), sharing one Redis:
 
 | Service | Start command | Notes |
 |---|---|---|
-| `web` | (default, from `backend/Dockerfile`) `uvicorn app.main:app --host 0.0.0.0 --port $PORT` | Generate a public domain for this one — Railway's own `*.up.railway.app` domain works fine; `auditagent.dev` isn't owned |
+| `web` | (default, from `backend/Dockerfile`) `uvicorn app.main:app --host 0.0.0.0 --port $PORT` | Generate a public domain for this one — Railway's own `*.up.railway.app` domain works fine, or point a subdomain of `auditagent.cloud` at it |
 | `worker` | override to `arq app.worker.worker_settings.WorkerSettings` | No public domain needed |
 | `Redis` | Railway plugin | Gives both services `REDIS_URL` |
 
@@ -56,8 +56,8 @@ WHOP_WEBHOOK_SECRET
 WHOP_PLAN_STARTER
 WHOP_PLAN_PRO
 APP_BASE_URL=https://awais1290-auditagent.hf.space  # or this Railway service's own domain
-DASHBOARD_BASE_URL=https://getauditagent.vercel.app
-CORS_ORIGINS=https://getauditagent.vercel.app
+DASHBOARD_BASE_URL=https://auditagent.cloud
+CORS_ORIGINS=https://auditagent.cloud,https://www.auditagent.cloud
 APPROVAL_TIMEOUT_MINUTES=30
 ```
 
@@ -75,8 +75,9 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY
 NEXT_PUBLIC_API_BASE_URL=https://awais1290-auditagent.hf.space
 ```
 
-Domain: no custom domain — `auditagent.dev` isn't owned, so the dashboard is
-used at its Vercel-assigned `https://getauditagent.vercel.app`.
+Domain: `auditagent.cloud` (and `www.auditagent.cloud`), attached in Vercel's
+Domains settings — the Vercel-assigned `https://getauditagent.vercel.app`
+still works too.
 
 ## Database → Supabase
 

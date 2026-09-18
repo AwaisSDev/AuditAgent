@@ -80,15 +80,15 @@ export default function TimelinePage() {
       </div>
 
       <Card>
-        <Table>
+        <Table className="text-base">
           <THead>
             <TR>
-              <TH>When</TH>
-              <TH>Agent action</TH>
-              <TH className="hidden sm:table-cell">Type</TH>
-              <TH>Status</TH>
-              <TH className="hidden md:table-cell">Latency</TH>
-              <TH className="hidden md:table-cell">Cost</TH>
+              <TH className="text-[15px]">When</TH>
+              <TH className="text-[15px]">Agent action</TH>
+              <TH className="hidden text-[15px] sm:table-cell">Type</TH>
+              <TH className="text-[15px]">Status</TH>
+              <TH className="hidden text-[15px] md:table-cell">Latency</TH>
+              <TH className="hidden text-[15px] md:table-cell">Cost</TH>
             </TR>
           </THead>
           <TBody>
@@ -119,21 +119,21 @@ export default function TimelinePage() {
               <>
                 {events?.map((e) => (
                   <TR key={e.id} className="cursor-pointer" onClick={() => setSelected(e)}>
-                    <TD className="whitespace-nowrap text-muted-foreground">{formatDate(e.created_at)}</TD>
+                    <TD className="whitespace-nowrap py-4 text-muted-foreground">{formatDate(e.created_at)}</TD>
                     <TD
-                      className="max-w-[84px] overflow-hidden text-ellipsis whitespace-nowrap font-medium sm:max-w-none sm:overflow-visible sm:whitespace-normal"
+                      className="max-w-[84px] overflow-hidden text-ellipsis whitespace-nowrap py-4 font-medium sm:max-w-none sm:overflow-visible sm:whitespace-normal"
                       title={e.action_name}
                     >
                       {e.action_name}
                     </TD>
-                    <TD className="hidden text-muted-foreground sm:table-cell">{e.action_type}</TD>
-                    <TD>
+                    <TD className="hidden py-4 text-muted-foreground sm:table-cell">{e.action_type}</TD>
+                    <TD className="py-4">
                       <StatusBadge status={e.status} />
                     </TD>
-                    <TD className="hidden tabular-nums text-muted-foreground md:table-cell">
+                    <TD className="hidden py-4 tabular-nums text-muted-foreground md:table-cell">
                       {e.latency_ms != null ? `${e.latency_ms}ms` : "-"}
                     </TD>
-                    <TD className="hidden tabular-nums text-muted-foreground md:table-cell">
+                    <TD className="hidden py-4 tabular-nums text-muted-foreground md:table-cell">
                       {e.cost_usd != null ? `$${e.cost_usd.toFixed(4)}` : "-"}
                     </TD>
                   </TR>

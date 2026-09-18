@@ -376,7 +376,13 @@ export function Landing() {
               <Link href="/login" className="hover:text-[var(--lp-fg)]">
                 Log in
               </Link>
-              <a href="mailto:hello@auditagent.dev" className="hover:text-[var(--lp-fg)]">
+              <Link href="/privacy" className="hover:text-[var(--lp-fg)]">
+                Privacy
+              </Link>
+              <Link href="/terms" className="hover:text-[var(--lp-fg)]">
+                Terms
+              </Link>
+              <a href="mailto:mawais9171@gmail.com" className="hover:text-[var(--lp-fg)]">
                 Contact
               </a>
             </div>

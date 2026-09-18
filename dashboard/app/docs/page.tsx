@@ -179,8 +179,8 @@ def send_refund(customer_id: str, amount_cents: int):
             The SDK also ships an offline <code>audagent</code> CLI for validating a policy file before
             it ships, and supports async functions the same way as sync ones. Stuck on something not
             covered here? Email{" "}
-            <a href="mailto:support@auditagent.dev" className="text-foreground underline underline-offset-2">
-              support@auditagent.dev
+            <a href="mailto:mawais9171@gmail.com" className="text-foreground underline underline-offset-2">
+              mawais9171@gmail.com
             </a>
             . That&apos;s exactly the kind of gap we want to hear about.
           </p>

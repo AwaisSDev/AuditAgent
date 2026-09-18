@@ -5,7 +5,7 @@ agent action, a policy engine that routes risky actions to a human via
 Slack, an audit dashboard, an evidence-pack generator for security
 questionnaires, and a Claude MCP server to query it all conversationally.
 
-Live at: dashboard `https://getauditagent.vercel.app`, API `https://awais1290-auditagent.hf.space` — `auditagent.dev` (`.com`/`.io`/`.ai` are all squatted) isn't owned and isn't currently planned; these are the real addresses in use.
+Live at: dashboard `https://auditagent.cloud`, API `https://awais1290-auditagent.hf.space`.
 
 ## Repo map
 

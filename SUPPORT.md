@@ -2,52 +2,42 @@
 
 ## How to reach us
 
-- **Email:** `support@auditagent.dev` *(placeholder — point this at a real
-  inbox or helpdesk, e.g. a shared Gmail, Help Scout, or Zendesk address,
-  before launch)*
-- **In-app:** the Settings page has a "Contact support" link that opens a
-  pre-filled email with your workspace ID attached, so we never have to ask
-  which workspace you mean.
+- **Email:** `mawais9171@gmail.com` — include your workspace ID (Settings
+  page, bottom of the sidebar) so we never have to ask which workspace you
+  mean.
 
 ## What to expect
 
-Response-time targets by plan *(fill in the numbers you're actually willing
-to commit to — these are placeholders, not promises we've made anywhere
-else)*:
+Response-time targets by plan:
 
 | Plan       | First response | Channel            |
 |------------|----------------|---------------------|
 | Free       | Best-effort    | Email               |
 | Starter    | 1 business day | Email               |
-| Growth     | 4 business hours | Email + priority queue |
+| Pro        | 4 business hours | Email + priority queue |
 | Enterprise | Per your contract's SLA | Email + Slack Connect (optional) |
-
-If you haven't decided on these numbers yet, don't publish this table
-externally — an unfilled placeholder is safer than a number nobody signed
-off on.
 
 ## Security issues
 
 Found a security vulnerability? Please **do not** open a public GitHub
-issue. Email `security@auditagent.dev` *(placeholder — set this up; a
-number of researchers will check for `security.txt` at
-`/.well-known/security.txt` before emailing anywhere else)* with:
+issue. Email `mawais9171@gmail.com` (also published at
+`/.well-known/security.txt` — a number of researchers check that path
+before emailing anywhere else) with:
 
 - What you found and how you found it
 - Steps to reproduce
 - What you think the impact is
 
-We'll acknowledge within *(pick a number — 2 business days is a common
-starting point)* and keep you updated as we investigate and fix.
+We'll acknowledge within 2 business days and keep you updated as we
+investigate and fix.
 
 ## Outages and incidents
 
-*(This section needs an actual decision from you: where will status be
-posted — a status page like Statuspage/Instatus, a pinned tweet, an email
-blast? What's your internal on-call process when the backend or worker
-goes down? Neither of those is something we can infer from the code — see
-`docs/PRODUCTION_READINESS.md` for the full list of business decisions
-still open.)*
+Status updates are posted to `mawais9171@gmail.com` on request and, once a
+status-page vendor (e.g. Instatus/Statuspage) is set up, at a public status
+URL to be added here. Internal on-call process: the operator is paged
+directly (no formal rotation yet — single-operator team). This section will
+be expanded once AuditAgent has more than one person on call.
 
 ## Feature requests and bugs
 

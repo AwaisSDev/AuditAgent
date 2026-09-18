@@ -9,8 +9,9 @@ import httpx
 # first imported, since that depends on import order. Falls back to the
 # env var (for a standalone deployment of this package) and then the
 # real deployed origin as a default (for local/stdio use against the
-# public API) -- auditagent.dev was never bought, so this HF Space URL
-# is the actual backend, not a placeholder for a future custom domain.
+# public API) -- the backend stays on this HF Space URL even though
+# auditagent.cloud is now owned; that domain points the dashboard, not
+# this API.
 _base_url = os.environ.get("AUDITAGENT_BASE_URL", "https://awais1290-auditagent.hf.space")
 
 

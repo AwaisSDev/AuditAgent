@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { Menu } from "lucide-react";
 import { restoreStoredTheme } from "@/lib/theme";
 import { useWorkspace } from "@/lib/workspace-context";
@@ -39,6 +40,11 @@ function AppShellSkeleton() {
 export function AppShell({ children }: { children: React.ReactNode }) {
   const { workspaces, isLoading } = useWorkspace();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  // The Timeline's event table is the densest view in the app -- give it
+  // extra breathing room instead of squeezing it into the same width as a
+  // settings form.
+  const pathname = usePathname();
+  const isTimeline = pathname === "/dashboard";
 
   // Client-side navigation (next/link) never re-runs the theme-init
   // script, so arriving here from a forced-always-light page (landing,
@@ -72,7 +78,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </div>
 
         <main className="flex-1 overflow-y-auto md:h-screen">
-          <div className="mx-auto max-w-4xl px-4 py-6 sm:px-10 sm:py-8">{children}</div>
+          <div className={`mx-auto px-4 py-6 sm:px-10 sm:py-8 ${isTimeline ? "max-w-6xl" : "max-w-4xl"}`}>
+            {children}
+          </div>
         </main>
       </div>
     </div>

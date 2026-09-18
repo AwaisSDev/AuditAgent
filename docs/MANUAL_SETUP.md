@@ -13,7 +13,7 @@ order; later steps depend on earlier ones.
 4. SQL Editor → paste and run [`supabase/schema.sql`](../supabase/schema.sql) in full.
 5. Storage → create a new **private** bucket named `questionnaires` (used by F4's upload flow).
 6. Authentication → Providers: enable **Email** (magic link) — it's on by default. Authentication → URL Configuration: add
-   `http://localhost:3000/auth/callback` and `https://getauditagent.vercel.app/auth/callback` as redirect URLs.
+   `http://localhost:3000/auth/callback` and `https://auditagent.cloud/auth/callback` as redirect URLs.
 
 ## 2. Anthropic
 
@@ -67,11 +67,13 @@ order; later steps depend on earlier ones.
 
 1. Import this repo into Vercel, set **Root Directory** to `dashboard/`.
 2. Add the env vars from `dashboard/.env.local.example`.
-3. `auditagent.dev` was never bought, so there's no custom domain to point at Vercel — the dashboard is used directly at its `*.vercel.app` URL (currently `https://getauditagent.vercel.app`).
+3. Custom domain: `auditagent.cloud` (and `www.auditagent.cloud`) is attached under Vercel's Domains settings, alongside the default `https://getauditagent.vercel.app`.
 
 ## 8. DNS
 
-Skipped for now — no domain is owned. `getauditagent.vercel.app` (dashboard) and the backend's HF Space URL are the real, permanent addresses until/unless a domain is bought later.
+`auditagent.cloud` is owned and pointed at Vercel (records added per Vercel's
+Domains → Edit instructions for the project). The backend stays on its HF
+Space URL — no DNS needed there.
 
 ## 9. PyPI (F1 SDK + F6 MCP server) — done
 
@@ -103,6 +105,6 @@ runs over stdio, not remote HTTP.
 ## 10. First login
 
 Once Supabase, backend, and dashboard are all deployed: sign in at
-`https://getauditagent.vercel.app`, create your first workspace, create an
+`https://auditagent.cloud`, create your first workspace, create an
 API key under Settings, and use it with the SDK (`pip install AudAgent`) or
 MCP server.

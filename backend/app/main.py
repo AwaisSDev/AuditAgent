@@ -1,5 +1,6 @@
 from contextlib import asynccontextmanager
 
+import sentry_sdk
 from auditagent_mcp.server import configure_backend_url, configure_data_provider, configure_oauth, http_app as mcp_http_app
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -9,6 +10,16 @@ from app.config import get_settings
 from app.routers import agents, approvals, auth, billing, events, ingest, mcp_data, oauth, policies, questionnaires, slack, soc2, workspaces
 from app.services.mcp_oauth_provider import get_oauth_provider
 from app.services.mcp_provider import BackendDataProvider
+
+_settings = get_settings()
+# No-op until SENTRY_DSN is set to a real DSN from a Sentry project -- see
+# app/config.py::Settings.sentry_dsn.
+if _settings.sentry_dsn:
+    sentry_sdk.init(
+        dsn=_settings.sentry_dsn,
+        environment=_settings.sentry_environment,
+        traces_sample_rate=0.1,
+    )
 
 
 @asynccontextmanager
