@@ -84,6 +84,11 @@ async def whop_webhook(request: Request) -> dict:
         return {"received": True}
 
     db = get_db()
+    existing = await run_db(
+        lambda: db.table("subscriptions").select("whop_membership_id").eq("workspace_id", workspace_id).execute()
+    )
+    on_file_membership_id = existing.data[0]["whop_membership_id"] if existing.data else None
+
     if event_type == "membership.activated":
         plan = metadata.get("plan") or plan_for_whop_plan_id(membership.get("plan", {}).get("id", ""))
 
@@ -92,13 +97,9 @@ async def whop_webhook(request: Request) -> dict:
         # without canceling the old one, both stay active and billing in
         # parallel (confirmed live: the same account ended up with a
         # Starter and a Pro payment both succeeded back to back).
-        existing = await run_db(
-            lambda: db.table("subscriptions").select("whop_membership_id").eq("workspace_id", workspace_id).execute()
-        )
-        old_membership_id = existing.data[0]["whop_membership_id"] if existing.data else None
-        if old_membership_id and old_membership_id != membership_id:
+        if on_file_membership_id and on_file_membership_id != membership_id:
             try:
-                await asyncio.to_thread(cancel_membership, old_membership_id)
+                await asyncio.to_thread(cancel_membership, on_file_membership_id)
             except httpx.HTTPStatusError:
                 # Already canceled/expired on Whop's side, or some other
                 # non-fatal rejection -- don't let cleanup of the OLD
@@ -108,6 +109,16 @@ async def whop_webhook(request: Request) -> dict:
 
         await _upsert_whop_subscription(db, workspace_id=workspace_id, whop_membership_id=membership_id, plan=plan, status="active")
     else:
+        # That cancel call above makes Whop deliver a deactivated event for
+        # the OLD membership -- confirmed live, it can arrive *after* the
+        # NEW membership's activated event already set the correct plan,
+        # and this branch would otherwise downgrade to free unconditionally,
+        # stomping the just-applied upgrade back to free. Only act on a
+        # deactivation if it's for whichever membership is actually on file
+        # right now -- a deactivation for a membership that's already been
+        # superseded by a newer one is stale and must be a no-op.
+        if on_file_membership_id and on_file_membership_id != membership_id:
+            return {"received": True}
         await _upsert_whop_subscription(db, workspace_id=workspace_id, whop_membership_id=membership_id, plan="free", status="canceled")
 
     return {"received": True}

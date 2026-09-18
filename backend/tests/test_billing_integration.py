@@ -241,6 +241,24 @@ def test_webhook_still_activates_the_new_plan_if_canceling_the_old_one_fails(fak
     assert fake_db._tables["workspaces"][WORKSPACE_ID]["plan"] == "pro"
 
 
+def test_webhook_ignores_a_stale_deactivation_for_an_already_superseded_membership(fake_db):
+    # The exact race confirmed live: canceling the old membership on an
+    # upgrade makes Whop deliver a deactivated event for it, which can
+    # arrive *after* the new membership's activated event already set the
+    # correct plan -- this must not stomp that back to free.
+    fake_db._tables["workspaces"][WORKSPACE_ID]["plan"] = "pro"
+    fake_db._tables["subscriptions"][WORKSPACE_ID] = {"workspace_id": WORKSPACE_ID, "whop_membership_id": "mem_new", "status": "active"}
+    event = {"type": "membership.deactivated", "data": {"id": "mem_old"}}
+    membership = {"id": "mem_old", "metadata": {"workspace_id": WORKSPACE_ID}}
+    with patch("app.routers.billing.verify_webhook", return_value=event), patch("app.routers.billing.get_membership", return_value=membership):
+        with TestClient(app) as c:
+            resp = c.post("/v1/billing/whop/webhook", content=b"{}", headers=_whop_headers())
+
+    assert resp.status_code == 200
+    assert fake_db._tables["workspaces"][WORKSPACE_ID]["plan"] == "pro"
+    assert fake_db._tables["subscriptions"][WORKSPACE_ID]["whop_membership_id"] == "mem_new"
+
+
 def test_webhook_membership_deactivated_downgrades_to_free(fake_db):
     fake_db._tables["workspaces"][WORKSPACE_ID]["plan"] = "pro"
     event = {"type": "membership.deactivated", "data": {"id": "mem_123"}}
@@ -252,6 +270,23 @@ def test_webhook_membership_deactivated_downgrades_to_free(fake_db):
     assert resp.status_code == 200
     assert fake_db._tables["workspaces"][WORKSPACE_ID]["plan"] == "free"
     assert fake_db._tables["subscriptions"][WORKSPACE_ID]["status"] == "canceled"
+
+
+def test_webhook_deactivating_the_membership_actually_on_file_downgrades_to_free(fake_db):
+    # Same as above, but with an existing subscriptions row whose
+    # whop_membership_id matches the one being deactivated -- a genuine,
+    # current cancellation (not a stale one superseded by a newer plan)
+    # must still go through.
+    fake_db._tables["workspaces"][WORKSPACE_ID]["plan"] = "starter"
+    fake_db._tables["subscriptions"][WORKSPACE_ID] = {"workspace_id": WORKSPACE_ID, "whop_membership_id": "mem_123", "status": "active"}
+    event = {"type": "membership.deactivated", "data": {"id": "mem_123"}}
+    membership = {"id": "mem_123", "metadata": {"workspace_id": WORKSPACE_ID}}
+    with patch("app.routers.billing.verify_webhook", return_value=event), patch("app.routers.billing.get_membership", return_value=membership):
+        with TestClient(app) as c:
+            resp = c.post("/v1/billing/whop/webhook", content=b"{}", headers=_whop_headers())
+
+    assert resp.status_code == 200
+    assert fake_db._tables["workspaces"][WORKSPACE_ID]["plan"] == "free"
 
 
 def test_webhook_ignores_unrelated_event_types(fake_db):
