@@ -5,7 +5,8 @@ agent action, a policy engine that routes risky actions to a human via
 Slack, an audit dashboard, an evidence-pack generator for security
 questionnaires, and a Claude MCP server to query it all conversationally.
 
-Live at: dashboard `https://auditagent.cloud`, API `https://awais1290-auditagent.hf.space`.
+Live at: dashboard `https://auditagent.cloud`, API `https://awais1290-auditagent.hf.space`,
+MCP `https://mcp.auditagent.cloud` (a reverse proxy in front of the same API).
 
 ## Repo map
 

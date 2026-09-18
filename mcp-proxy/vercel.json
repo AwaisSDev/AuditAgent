@@ -1,0 +1,5 @@
+{
+  "rewrites": [
+    { "source": "/(.*)", "destination": "https://awais1290-auditagent.hf.space/$1" }
+  ]
+}

@@ -21,6 +21,9 @@ next-env.d.ts
 .env.local
 .env.*.local
 
+# Vercel CLI project links (local, per-machine)
+.vercel/
+
 # OS / editor
 .DS_Store
 Thumbs.db
