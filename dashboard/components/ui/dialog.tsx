@@ -23,7 +23,7 @@ export function Dialog({
         className={cn("max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-lg border border-border bg-card p-5 shadow-popover")}
         onClick={(e) => e.stopPropagation()}
       >
-        <h2 className="mb-4 text-sm font-medium">{title}</h2>
+        {title && <h2 className="mb-4 text-sm font-medium">{title}</h2>}
         {children}
       </div>
     </div>
