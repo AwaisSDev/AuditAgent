@@ -78,7 +78,7 @@ def test_create_checkout_session_raises_when_billing_not_configured(monkeypatch)
         create_checkout_session("ws-1", "starter", "user@example.com")
 
 
-def test_create_checkout_session_posts_the_plan_and_metadata(monkeypatch):
+def test_create_checkout_session_posts_the_plan_id_and_metadata(monkeypatch):
     monkeypatch.setattr("app.services.whop_client.get_settings", lambda: _settings())
     fake_response = MagicMock()
     fake_response.json.return_value = {"purchase_url": "https://sandbox.whop.com/checkout/ch_xyz"}
@@ -88,10 +88,27 @@ def test_create_checkout_session_posts_the_plan_and_metadata(monkeypatch):
         url = create_checkout_session("ws-1", "starter", "user@example.com")
 
     assert url == "https://sandbox.whop.com/checkout/ch_xyz"
+    assert mock_post.call_args.args[0].endswith("/checkout_configurations")
     kwargs = mock_post.call_args.kwargs
-    assert kwargs["json"]["plan"] == {"id": "plan_starter"}
+    assert kwargs["json"]["plan_id"] == "plan_starter"
+    assert kwargs["json"]["mode"] == "payment"
     assert kwargs["json"]["metadata"] == {"workspace_id": "ws-1", "plan": "starter"}
     assert kwargs["headers"]["Authorization"] == "Bearer whop_test_fake"
+
+
+def test_create_checkout_session_resolves_a_relative_purchase_url(monkeypatch):
+    # Confirmed live: the API returns purchase_url as a path relative to
+    # sandbox.whop.com/whop.com, not the api./sandbox-api. host requests are
+    # made against -- this must not be handed to the browser as-is.
+    monkeypatch.setattr("app.services.whop_client.get_settings", lambda: _settings())
+    fake_response = MagicMock()
+    fake_response.json.return_value = {"purchase_url": "/checkout/ch_xyz/"}
+    fake_response.raise_for_status = MagicMock()
+
+    with patch("app.services.whop_client.httpx.post", return_value=fake_response):
+        url = create_checkout_session("ws-1", "starter", "user@example.com")
+
+    assert url == "https://sandbox.whop.com/checkout/ch_xyz/"
 
 
 def test_get_membership_fetches_by_id(monkeypatch):

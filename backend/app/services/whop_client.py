@@ -62,26 +62,41 @@ def plan_for_whop_plan_id(plan_id: str) -> str | None:
     return mapping.get(plan_id)
 
 
+def _checkout_origin(settings) -> str:
+    # purchase_url comes back as a path relative to whop.com/sandbox.whop.com
+    # (confirmed live: "/checkout/ch_xxx/"), not the api./sandbox-api. host
+    # requests are actually made against -- so it has to be derived
+    # separately rather than assumed to already be absolute.
+    return "https://sandbox.whop.com" if "sandbox" in settings.whop_api_base_url else "https://whop.com"
+
+
 def create_checkout_session(workspace_id: str, plan: str, customer_email: str) -> str:
     """Creates a one-off checkout configuration referencing one of the two
     plans created in the Whop dashboard, carrying workspace_id/plan as
     metadata -- Whop copies a checkout configuration's metadata onto the
     payment and membership it produces, which is how the webhook below
     maps a completed payment back to a workspace (there's no equivalent of
-    Stripe's client_reference_id here, metadata is the only pass-through)."""
+    Stripe's client_reference_id here, metadata is the only pass-through).
+
+    Uses the "existing plan_id" variant of this endpoint's request schema
+    (it's a oneOf: inline plan details, an existing plan_id, or "setup"
+    mode) -- plan_id and mode are both required for that variant;
+    account_id is only required for the unrelated "setup" mode."""
     settings = get_settings()
     resp = httpx.post(
-        f"{settings.whop_api_base_url}/checkout-configurations",
+        f"{settings.whop_api_base_url}/checkout_configurations",
         headers=_headers(),
         json={
-            "plan": {"id": whop_plan_id_for(plan)},
+            "plan_id": whop_plan_id_for(plan),
+            "mode": "payment",
             "metadata": {"workspace_id": workspace_id, "plan": plan},
             "redirect_url": f"{settings.dashboard_base_url}/settings?billing=success",
         },
         timeout=15.0,
     )
     resp.raise_for_status()
-    return resp.json()["purchase_url"]
+    purchase_url = resp.json()["purchase_url"]
+    return purchase_url if purchase_url.startswith("http") else f"{_checkout_origin(settings)}{purchase_url}"
 
 
 def get_membership(membership_id: str) -> dict:
