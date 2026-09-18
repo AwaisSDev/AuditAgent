@@ -293,9 +293,9 @@ function BillingCard() {
                   size="sm"
                   variant="outline"
                   className="mt-3 w-full"
-                  onClick={() => (window.location.href = "mailto:sales@auditagent.dev")}
+                  onClick={() => window.open("https://cal.com/awais-siddique/30min", "_blank", "noopener,noreferrer")}
                 >
-                  Contact us
+                  Book a call
                 </Button>
               ) : (
                 <Button
