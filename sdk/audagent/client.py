@@ -18,7 +18,7 @@ from audagent.policy import Policy
 
 F = TypeVar("F", bound=Callable[..., Any])
 
-DEFAULT_BASE_URL = "https://awais1290-auditagent.hf.space"
+DEFAULT_BASE_URL = "https://mcp.auditagent.cloud"
 POLL_INTERVAL_SECONDS = 2.0
 # An approval poll can run for up to the server's approval window (30 min by
 # default) — a single transient network blip during that whole span
