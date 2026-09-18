@@ -133,7 +133,7 @@ def test_draft_questionnaire_answers_posts_the_question_list(monkeypatch):
 
 
 def test_get_compliance_summary_parses_the_response(monkeypatch):
-    summary = {"plan": "growth", "approvals_configured": True, "events_last_30_days_by_status": {}, "pending_approvals": 0, "latest_audit_checkpoint": None}
+    summary = {"plan": "pro", "approvals_configured": True, "events_last_30_days_by_status": {}, "pending_approvals": 0, "latest_audit_checkpoint": None}
     _install_transport(monkeypatch, lambda req: httpx.Response(200, json=summary))
 
     assert client.get_compliance_summary("al_live_test_key") == summary

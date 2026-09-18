@@ -16,9 +16,9 @@ import { formatDate } from "@/lib/utils";
 import type { ApiKey } from "@/lib/types";
 
 const PLANS = [
-  { id: "starter", name: "Starter", price: "$49/mo", blurb: "5 agents, 50k events, 5 questionnaires/mo" },
-  { id: "growth", name: "Growth", price: "$199/mo", blurb: "Unlimited questionnaires, Slack approvals, SOC2 export" },
-  { id: "enterprise", name: "Enterprise", price: "$999/mo", blurb: "Custom retention, SSO, DPA" },
+  { id: "starter", name: "Starter", price: "$49/mo", blurb: "10 agents, 50k events/mo, 10 evidence pack drafts/mo" },
+  { id: "pro", name: "Pro", price: "$99/mo", blurb: "50 agents, 250k events/mo, unlimited evidence pack drafts" },
+  { id: "enterprise", name: "Enterprise", price: "Contact us", blurb: "Unlimited agents, pay as you go events, custom contracts" },
 ] as const;
 
 export default function SettingsPage() {
@@ -288,15 +288,26 @@ function BillingCard() {
               <div className="font-medium">{p.name}</div>
               <div className="text-sm text-muted-foreground">{p.price}</div>
               <p className="mt-1 text-xs text-muted-foreground">{p.blurb}</p>
-              <Button
-                size="sm"
-                className="mt-3 w-full"
-                variant={workspace?.plan === p.id ? "outline" : "default"}
-                disabled={workspace?.plan === p.id || checkout.isPending}
-                onClick={() => checkout.mutate(p.id)}
-              >
-                {workspace?.plan === p.id ? "Current plan" : "Upgrade"}
-              </Button>
+              {p.id === "enterprise" ? (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="mt-3 w-full"
+                  onClick={() => (window.location.href = "mailto:sales@auditagent.dev")}
+                >
+                  Contact us
+                </Button>
+              ) : (
+                <Button
+                  size="sm"
+                  className="mt-3 w-full"
+                  variant={workspace?.plan === p.id ? "outline" : "default"}
+                  disabled={workspace?.plan === p.id || checkout.isPending}
+                  onClick={() => checkout.mutate(p.id)}
+                >
+                  {workspace?.plan === p.id ? "Current plan" : "Upgrade"}
+                </Button>
+              )}
             </div>
           ))}
         </div>

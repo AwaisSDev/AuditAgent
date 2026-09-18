@@ -142,9 +142,9 @@ def test_ingest_returns_503_when_redis_is_not_configured(client, monkeypatch):
 
 
 def test_ingest_blocked_once_monthly_event_limit_reached(client, fake_db, monkeypatch):
-    fake_db._tables["workspaces"][WORKSPACE_ID]["plan"] = "free"  # limit of 1,000
+    fake_db._tables["workspaces"][WORKSPACE_ID]["plan"] = "free"  # limit of 2,500
     now = datetime.now(timezone.utc)
-    for i in range(1000):
+    for i in range(2500):
         fake_db._tables["events"][f"evt-{i}"] = {
             "id": f"evt-{i}",
             "workspace_id": WORKSPACE_ID,
@@ -165,7 +165,9 @@ def test_ingest_blocked_once_monthly_event_limit_reached(client, fake_db, monkey
 def test_ingest_ignores_events_from_before_this_month_for_the_limit(client, fake_db, monkeypatch):
     fake_db._tables["workspaces"][WORKSPACE_ID]["plan"] = "free"
     last_month = datetime.now(timezone.utc) - timedelta(days=40)
-    for i in range(1000):
+    # More than the free limit (2,500): only meaningful proof that old
+    # events are excluded if this many would otherwise trip it.
+    for i in range(3000):
         fake_db._tables["events"][f"evt-{i}"] = {
             "id": f"evt-{i}",
             "workspace_id": WORKSPACE_ID,

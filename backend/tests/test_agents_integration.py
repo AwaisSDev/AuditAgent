@@ -131,7 +131,7 @@ def test_agent_creation_blocked_once_plan_limit_reached(client, fake_db):
 
 
 def test_unlimited_plan_allows_many_agents(client, fake_db):
-    fake_db._tables["workspaces"][WORKSPACE_ID]["plan"] = "growth"  # unlimited
+    fake_db._tables["workspaces"][WORKSPACE_ID]["plan"] = "enterprise"  # unlimited
     for i in range(3):
         resp = client.post(f"/v1/workspaces/{WORKSPACE_ID}/agents", json={"name": f"bot-{i}"})
         assert resp.status_code == 201

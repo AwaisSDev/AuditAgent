@@ -35,17 +35,26 @@ order; later steps depend on earlier ones.
 2. Verify a sending domain (or use their shared testing domain while developing).
 3. Create an API key.
 
-## 5. Stripe (F9)
+## 5. Whop (F9)
 
-1. Create a Stripe account, stay in **test mode** until you're ready to charge real customers.
-2. Product catalog → create 3 products, each with one recurring monthly price:
-   - Starter — $49/mo
-   - Growth — $199/mo
-   - Enterprise — $999/mo
-   (Free has no Stripe price; it's the default `plan` value with no subscription row.)
-3. Copy each price's ID (`price_...`) into `STRIPE_PRICE_STARTER` / `_GROWTH` / `_ENTERPRISE`.
-4. Developers → API keys → copy the **Secret key**.
-5. Developers → Webhooks → **Add endpoint**: URL = `{APP_BASE_URL}/v1/billing/webhook`, events = `checkout.session.completed`, `customer.subscription.updated`, `customer.subscription.deleted`. Copy the **Signing secret**.
+Whop is the active billing provider (Stripe's integration still exists but
+is dormant -- see backend/app/services/stripe_client.py -- in case that
+ever changes back).
+
+1. Create an account at whop.com, or sandbox.whop.com for a test account
+   that never charges anyone (same steps either way -- see `docs/DEPLOYMENT.md`
+   for how sandbox vs. production differ).
+2. Create two plans:
+   - Starter — $49/mo, 10 agents, 50k events/mo, 10 evidence pack drafts/mo
+   - Pro — $99/mo, 50 agents, 250k events/mo, unlimited evidence pack drafts
+   (Free has no Whop plan; it's the default `plan` value with no
+   subscription row. Enterprise is a "contact us" conversation, not a
+   self-serve plan.)
+3. Copy each plan's id (`plan_...`) into `WHOP_PLAN_STARTER` / `WHOP_PLAN_PRO`.
+4. Settings → Developer → copy an **API key** into `WHOP_API_KEY`.
+5. Settings → Developer → Webhooks → **Create webhook**: URL =
+   `{APP_BASE_URL}/v1/billing/whop/webhook`, events = `membership.activated`,
+   `membership.deactivated`. Copy the signing secret into `WHOP_WEBHOOK_SECRET`.
 
 ## 6. Railway (backend + worker + Redis)
 

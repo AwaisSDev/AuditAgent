@@ -13,7 +13,7 @@ create table workspaces (
   name        text not null,
   slug        text not null unique,
   owner_id    uuid not null references auth.users(id) on delete restrict,
-  plan        text not null default 'free' check (plan in ('free','starter','growth','enterprise')),
+  plan        text not null default 'free' check (plan in ('free','starter','pro','enterprise')),
   slack_channel_id text,        -- set once the bot is invited to a channel (dashboard settings)
   notify_email     text,        -- fallback for approvals when no Slack channel is set
   created_at  timestamptz not null default now()
@@ -293,9 +293,13 @@ create index idx_evidence_links_answer on evidence_links(answer_id);
 
 create table subscriptions (
   workspace_id          uuid primary key references workspaces(id) on delete cascade,
+  -- Stripe columns kept nullable, not dropped: Stripe is dormant, not
+  -- removed (see whop_client.py's module docstring), so a config flip back
+  -- to it later doesn't need a migration to bring these back.
   stripe_customer_id     text unique,
   stripe_subscription_id text unique,
-  plan                   text not null default 'free' check (plan in ('free','starter','growth','enterprise')),
+  whop_membership_id     text unique,
+  plan                   text not null default 'free' check (plan in ('free','starter','pro','enterprise')),
   status                 text not null default 'active',
   current_period_end     timestamptz,
   updated_at             timestamptz not null default now()

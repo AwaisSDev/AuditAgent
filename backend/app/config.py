@@ -40,12 +40,24 @@ class Settings(BaseSettings):
     resend_api_key: str = ""
     email_from: str = "alerts@auditagent.dev"
 
-    # Stripe
+    # Stripe -- dormant unless configured; superseded by Whop below as the
+    # active checkout path, kept working in case that ever changes back.
     stripe_secret_key: str = ""
     stripe_webhook_secret: str = ""
     stripe_price_starter: str = ""
     stripe_price_growth: str = ""
     stripe_price_enterprise: str = ""
+
+    # Whop -- the active billing provider. whop_api_base_url points at the
+    # sandbox by default (https://sandbox-api.whop.com/api/v1); switch it to
+    # https://api.whop.com/api/v1 for real charges once ready, alongside
+    # swapping in a production API key and plan ids -- sandbox and
+    # production are entirely separate accounts/keys/plans per Whop's docs.
+    whop_api_base_url: str = "https://sandbox-api.whop.com/api/v1"
+    whop_api_key: str = ""
+    whop_webhook_secret: str = ""
+    whop_plan_starter: str = ""
+    whop_plan_pro: str = ""
 
     # App -- auditagent.dev was never bought; these are the actual domains in
     # use (HF Space backend, Vercel-hosted dashboard), not placeholders.

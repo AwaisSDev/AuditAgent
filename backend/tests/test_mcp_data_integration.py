@@ -213,7 +213,7 @@ def test_draft_questionnaire_answers(client, fake_db):
 
 
 def test_compliance_summary(client, fake_db):
-    fake_db._tables["workspaces"][WORKSPACE_ID] = {"id": WORKSPACE_ID, "plan": "growth", "slack_channel_id": "C123", "notify_email": None}
+    fake_db._tables["workspaces"][WORKSPACE_ID] = {"id": WORKSPACE_ID, "plan": "pro", "slack_channel_id": "C123", "notify_email": None}
     now = datetime.now(timezone.utc)
     old = now - timedelta(days=60)
     fake_db._tables["events"] = {
@@ -229,7 +229,7 @@ def test_compliance_summary(client, fake_db):
     resp = client.get("/v1/mcp/compliance-summary", headers={"Authorization": "Bearer al_live_test"})
     assert resp.status_code == 200, resp.text
     body = resp.json()
-    assert body["plan"] == "growth"
+    assert body["plan"] == "pro"
     assert body["approvals_configured"] is True
     assert body["events_last_30_days_by_status"] == {"completed": 1, "rejected": 1}
     assert body["pending_approvals"] == 1

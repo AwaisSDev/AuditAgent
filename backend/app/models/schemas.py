@@ -208,7 +208,7 @@ class WorkspaceOut(BaseModel):
 # ---------------------------------------------------------------------------
 
 class CheckoutSessionIn(BaseModel):
-    plan: Literal["starter", "growth", "enterprise"]
+    plan: Literal["starter", "pro"]
 
 
 class CheckoutSessionOut(BaseModel):

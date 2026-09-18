@@ -50,11 +50,16 @@ SLACK_BOT_TOKEN
 SLACK_SIGNING_SECRET
 RESEND_API_KEY
 EMAIL_FROM
-STRIPE_SECRET_KEY
+STRIPE_SECRET_KEY  # dormant, see docs/MANUAL_SETUP.md
 STRIPE_WEBHOOK_SECRET
 STRIPE_PRICE_STARTER
 STRIPE_PRICE_GROWTH
 STRIPE_PRICE_ENTERPRISE
+WHOP_API_BASE_URL=https://sandbox-api.whop.com/api/v1  # or https://api.whop.com/api/v1 for real charges
+WHOP_API_KEY
+WHOP_WEBHOOK_SECRET
+WHOP_PLAN_STARTER
+WHOP_PLAN_PRO
 APP_BASE_URL=https://awais1290-auditagent.hf.space  # or this Railway service's own domain
 DASHBOARD_BASE_URL=https://getauditagent.vercel.app
 CORS_ORIGINS=https://getauditagent.vercel.app

@@ -2,7 +2,7 @@ export interface Workspace {
   id: string;
   name: string;
   slug: string;
-  plan: "free" | "starter" | "growth" | "enterprise";
+  plan: "free" | "starter" | "pro" | "enterprise";
   slack_channel_id: string | null;
   notify_email: string | null;
   created_at: string;

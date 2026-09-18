@@ -1,17 +1,16 @@
 """Integration tests for the billing router: checkout-session creation
-(including both failure paths that this session's fix turned from an
-unhandled 500 into a real error the browser can show), and the webhook
-handler for all three subscribed event types."""
+(including both failure paths that turn an unhandled 500 into a real
+error the browser can show), and the Whop webhook handler."""
 
 from unittest.mock import patch
 
+import httpx
 import pytest
-import stripe as stripe_sdk
 from fastapi.testclient import TestClient
 
 from app.main import app
 from app.security import CurrentUser, require_workspace_member
-from app.services.stripe_client import BillingNotConfiguredError
+from app.services.whop_client import BillingNotConfiguredError
 
 WORKSPACE_ID = "ws-1"
 
@@ -101,74 +100,96 @@ def test_checkout_surfaces_billing_not_configured_as_503(client):
     assert resp.status_code == 503
 
 
-def test_checkout_surfaces_a_stripe_error_as_502(client):
-    stripe_error = stripe_sdk.error.StripeError("Your card was declined.")
-    with patch("app.routers.billing.create_checkout_session", side_effect=stripe_error):
+def test_checkout_surfaces_a_whop_error_as_502(client):
+    whop_error = httpx.HTTPStatusError("declined", request=httpx.Request("POST", "https://x"), response=httpx.Response(402, text="card declined"))
+    with patch("app.routers.billing.create_checkout_session", side_effect=whop_error):
         resp = client.post(f"/v1/workspaces/{WORKSPACE_ID}/billing/checkout", json={"plan": "starter"})
     assert resp.status_code == 502
     assert "declined" in resp.json()["detail"]
 
 
 def test_checkout_returns_the_session_url_on_success(client):
-    with patch("app.routers.billing.create_checkout_session", return_value="https://checkout.stripe.com/xyz"):
+    with patch("app.routers.billing.create_checkout_session", return_value="https://sandbox.whop.com/checkout/ch_xyz"):
         resp = client.post(f"/v1/workspaces/{WORKSPACE_ID}/billing/checkout", json={"plan": "starter"})
     assert resp.status_code == 200
-    assert resp.json()["checkout_url"] == "https://checkout.stripe.com/xyz"
+    assert resp.json()["checkout_url"] == "https://sandbox.whop.com/checkout/ch_xyz"
+
+
+def _whop_headers():
+    return {"webhook-id": "msg_1", "webhook-timestamp": "1700000000", "webhook-signature": "v1,sig"}
 
 
 def test_webhook_rejects_an_invalid_signature(fake_db):
-    with patch("app.routers.billing.construct_webhook_event", side_effect=ValueError("bad signature")):
+    with patch("app.routers.billing.verify_webhook", side_effect=ValueError("bad signature")):
         with TestClient(app) as c:
-            resp = c.post("/v1/billing/webhook", content=b"{}", headers={"stripe-signature": "bogus"})
+            resp = c.post("/v1/billing/whop/webhook", content=b"{}", headers=_whop_headers())
     assert resp.status_code == 400
 
 
-def test_webhook_checkout_completed_activates_the_plan(fake_db):
-    event = {
-        "type": "checkout.session.completed",
-        "data": {
-            "object": {
-                "metadata": {"workspace_id": WORKSPACE_ID, "plan": "starter"},
-                "customer": "cus_123",
-                "subscription": "sub_123",
-            }
-        },
-    }
-    with patch("app.routers.billing.construct_webhook_event", return_value=event):
+def test_webhook_surfaces_billing_not_configured_as_503(fake_db):
+    with patch("app.routers.billing.verify_webhook", side_effect=BillingNotConfiguredError("no secret")):
         with TestClient(app) as c:
-            resp = c.post("/v1/billing/webhook", content=b"{}", headers={"stripe-signature": "sig"})
+            resp = c.post("/v1/billing/whop/webhook", content=b"{}", headers=_whop_headers())
+    assert resp.status_code == 503
+
+
+def test_webhook_membership_activated_sets_the_plan(fake_db):
+    event = {"type": "membership.activated", "data": {"id": "mem_123"}}
+    membership = {"id": "mem_123", "metadata": {"workspace_id": WORKSPACE_ID, "plan": "starter"}, "plan": {"id": "plan_starter"}}
+    with patch("app.routers.billing.verify_webhook", return_value=event), patch("app.routers.billing.get_membership", return_value=membership):
+        with TestClient(app) as c:
+            resp = c.post("/v1/billing/whop/webhook", content=b"{}", headers=_whop_headers())
 
     assert resp.status_code == 200
     assert fake_db._tables["workspaces"][WORKSPACE_ID]["plan"] == "starter"
     assert fake_db._tables["subscriptions"][WORKSPACE_ID]["status"] == "active"
+    assert fake_db._tables["subscriptions"][WORKSPACE_ID]["whop_membership_id"] == "mem_123"
 
 
-def test_webhook_subscription_deleted_downgrades_to_free(fake_db):
-    fake_db._tables["workspaces"][WORKSPACE_ID]["plan"] = "growth"
-    event = {
-        "type": "customer.subscription.deleted",
-        "data": {
-            "object": {
-                "metadata": {"workspace_id": WORKSPACE_ID},
-                "customer": "cus_123",
-                "id": "sub_123",
-                "status": "canceled",
-                "items": {"data": []},
-            }
-        },
-    }
-    with patch("app.routers.billing.construct_webhook_event", return_value=event):
+def test_webhook_membership_activated_falls_back_to_plan_id_lookup(fake_db):
+    # No "plan" in metadata (e.g. an older checkout config) -- must still
+    # resolve the plan from the Whop plan id itself.
+    event = {"type": "membership.activated", "data": {"id": "mem_123"}}
+    membership = {"id": "mem_123", "metadata": {"workspace_id": WORKSPACE_ID}, "plan": {"id": "plan_pro_id"}}
+    with patch("app.routers.billing.verify_webhook", return_value=event), \
+         patch("app.routers.billing.get_membership", return_value=membership), \
+         patch("app.routers.billing.plan_for_whop_plan_id", return_value="pro"):
         with TestClient(app) as c:
-            resp = c.post("/v1/billing/webhook", content=b"{}", headers={"stripe-signature": "sig"})
+            resp = c.post("/v1/billing/whop/webhook", content=b"{}", headers=_whop_headers())
+
+    assert resp.status_code == 200
+    assert fake_db._tables["workspaces"][WORKSPACE_ID]["plan"] == "pro"
+
+
+def test_webhook_membership_deactivated_downgrades_to_free(fake_db):
+    fake_db._tables["workspaces"][WORKSPACE_ID]["plan"] = "pro"
+    event = {"type": "membership.deactivated", "data": {"id": "mem_123"}}
+    membership = {"id": "mem_123", "metadata": {"workspace_id": WORKSPACE_ID}}
+    with patch("app.routers.billing.verify_webhook", return_value=event), patch("app.routers.billing.get_membership", return_value=membership):
+        with TestClient(app) as c:
+            resp = c.post("/v1/billing/whop/webhook", content=b"{}", headers=_whop_headers())
 
     assert resp.status_code == 200
     assert fake_db._tables["workspaces"][WORKSPACE_ID]["plan"] == "free"
+    assert fake_db._tables["subscriptions"][WORKSPACE_ID]["status"] == "canceled"
 
 
 def test_webhook_ignores_unrelated_event_types(fake_db):
-    event = {"type": "invoice.paid", "data": {"object": {}}}
-    with patch("app.routers.billing.construct_webhook_event", return_value=event):
+    event = {"type": "payment.succeeded", "data": {"id": "pay_1"}}
+    with patch("app.routers.billing.verify_webhook", return_value=event), patch("app.routers.billing.get_membership") as get_membership:
         with TestClient(app) as c:
-            resp = c.post("/v1/billing/webhook", content=b"{}", headers={"stripe-signature": "sig"})
+            resp = c.post("/v1/billing/whop/webhook", content=b"{}", headers=_whop_headers())
     assert resp.status_code == 200
     assert fake_db._tables["workspaces"][WORKSPACE_ID]["plan"] == "free"
+    get_membership.assert_not_called()
+
+
+def test_webhook_ignores_a_membership_with_no_workspace_metadata(fake_db):
+    event = {"type": "membership.activated", "data": {"id": "mem_123"}}
+    membership = {"id": "mem_123", "metadata": {}, "plan": {"id": "plan_unknown"}}
+    with patch("app.routers.billing.verify_webhook", return_value=event), patch("app.routers.billing.get_membership", return_value=membership):
+        with TestClient(app) as c:
+            resp = c.post("/v1/billing/whop/webhook", content=b"{}", headers=_whop_headers())
+    assert resp.status_code == 200
+    assert fake_db._tables["workspaces"][WORKSPACE_ID]["plan"] == "free"
+    assert WORKSPACE_ID not in fake_db._tables["subscriptions"]

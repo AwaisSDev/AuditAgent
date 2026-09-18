@@ -1,14 +1,13 @@
 import asyncio
 from datetime import datetime, timezone
 
+import httpx
 from fastapi import APIRouter, Depends, HTTPException, Request
 
 from app.db import get_db, run_db
 from app.models.schemas import CheckoutSessionIn, CheckoutSessionOut
 from app.security import CurrentUser, require_workspace_member
-import stripe as stripe_sdk
-
-from app.services.stripe_client import BillingNotConfiguredError, construct_webhook_event, create_checkout_session, plan_for_price_id
+from app.services.whop_client import BillingNotConfiguredError, create_checkout_session, get_membership, plan_for_whop_plan_id, verify_webhook
 
 router = APIRouter(prefix="/v1", tags=["billing"])
 
@@ -20,7 +19,8 @@ async def create_checkout(
     if not user.email:
         raise HTTPException(status_code=400, detail="Account has no email on file")
     try:
-        # stripe-python is a synchronous client under the hood.
+        # httpx's sync Client is used here (see whop_client.py) -- off the
+        # event loop the same way stripe-python's own sync client was.
         url = await asyncio.to_thread(create_checkout_session, workspace_id, body.plan, user.email)
     except BillingNotConfiguredError as exc:
         # Without this, an unhandled exception here produces a 500 that
@@ -28,58 +28,56 @@ async def create_checkout(
         # outright — the "Upgrade" button would silently do nothing with no
         # error ever reaching the user. See BillingNotConfiguredError's docstring.
         raise HTTPException(status_code=503, detail=str(exc)) from exc
-    except stripe_sdk.error.StripeError as exc:
-        raise HTTPException(status_code=502, detail=f"Stripe rejected the request: {exc.user_message or str(exc)}") from exc
+    except httpx.HTTPStatusError as exc:
+        raise HTTPException(status_code=502, detail=f"Whop rejected the request: {exc.response.text}") from exc
     return CheckoutSessionOut(checkout_url=url)
 
 
-@router.post("/billing/webhook")
-async def stripe_webhook(request: Request) -> dict:
+@router.post("/billing/whop/webhook")
+async def whop_webhook(request: Request) -> dict:
     payload = await request.body()
-    sig_header = request.headers.get("stripe-signature", "")
     try:
-        event = construct_webhook_event(payload, sig_header)
+        event = verify_webhook(
+            payload,
+            webhook_id=request.headers.get("webhook-id", ""),
+            webhook_timestamp=request.headers.get("webhook-timestamp", ""),
+            webhook_signature=request.headers.get("webhook-signature", ""),
+        )
+    except BillingNotConfiguredError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
     except Exception as exc:
         raise HTTPException(status_code=400, detail=f"Invalid webhook: {exc}") from exc
 
+    event_type = event.get("type", "")
+    membership_id = event.get("data", {}).get("id")
+    if not membership_id or event_type not in ("membership.activated", "membership.deactivated"):
+        # Every other subscribed-or-not event is a no-op here on purpose --
+        # ack it anyway so Whop doesn't retry-storm an endpoint that was
+        # never going to handle it.
+        return {"received": True}
+
+    # The webhook payload only ever carries an id (confirmed against Whop's
+    # own payment.succeeded example) -- metadata/plan/status live on the
+    # full object, not the event envelope, so this fetch isn't optional.
+    membership = await asyncio.to_thread(get_membership, membership_id)
     db = get_db()
-    obj = event["data"]["object"]
+    workspace_id = membership.get("metadata", {}).get("workspace_id")
+    if not workspace_id:
+        return {"received": True}
 
-    if event["type"] == "checkout.session.completed":
-        workspace_id = obj["metadata"]["workspace_id"]
-        plan = obj["metadata"]["plan"]
-        await _upsert_subscription(
-            db,
-            workspace_id=workspace_id,
-            stripe_customer_id=obj["customer"],
-            stripe_subscription_id=obj["subscription"],
-            plan=plan,
-            status="active",
-        )
-
-    elif event["type"] in ("customer.subscription.updated", "customer.subscription.deleted"):
-        workspace_id = obj.get("metadata", {}).get("workspace_id")
-        if workspace_id:
-            price_id = obj["items"]["data"][0]["price"]["id"] if obj.get("items", {}).get("data") else None
-            plan = plan_for_price_id(price_id) if price_id else None
-            status = "active" if event["type"] == "customer.subscription.updated" and obj["status"] == "active" else "canceled"
-            await _upsert_subscription(
-                db,
-                workspace_id=workspace_id,
-                stripe_customer_id=obj["customer"],
-                stripe_subscription_id=obj["id"],
-                plan=plan if event["type"] != "customer.subscription.deleted" else "free",
-                status=status,
-            )
+    if event_type == "membership.activated":
+        plan = membership.get("metadata", {}).get("plan") or plan_for_whop_plan_id(membership.get("plan", {}).get("id", ""))
+        await _upsert_whop_subscription(db, workspace_id=workspace_id, whop_membership_id=membership_id, plan=plan, status="active")
+    else:
+        await _upsert_whop_subscription(db, workspace_id=workspace_id, whop_membership_id=membership_id, plan="free", status="canceled")
 
     return {"received": True}
 
 
-async def _upsert_subscription(db, workspace_id: str, stripe_customer_id: str, stripe_subscription_id: str, plan: str | None, status: str) -> None:
+async def _upsert_whop_subscription(db, workspace_id: str, whop_membership_id: str, plan: str | None, status: str) -> None:
     payload = {
         "workspace_id": workspace_id,
-        "stripe_customer_id": stripe_customer_id,
-        "stripe_subscription_id": stripe_subscription_id,
+        "whop_membership_id": whop_membership_id,
         "status": status,
         "updated_at": datetime.now(timezone.utc).isoformat(),
     }
