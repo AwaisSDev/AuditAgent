@@ -78,7 +78,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </div>
 
         <main className="flex-1 overflow-y-auto md:h-screen">
-          <div className={`mx-auto px-4 py-6 sm:px-10 sm:py-8 ${isTimeline ? "max-w-6xl" : "max-w-4xl"}`}>
+          <div className={`mx-auto px-4 py-6 sm:px-10 sm:py-8 ${isTimeline ? "max-w-[1400px]" : "max-w-4xl"}`}>
             {children}
           </div>
         </main>
