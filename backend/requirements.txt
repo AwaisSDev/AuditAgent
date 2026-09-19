@@ -21,7 +21,7 @@ openpyxl==3.1.5
 pypdf==5.0.1
 resend==2.4.0
 sentry-sdk[fastapi]==2.17.0
-auditagent-mcp>=0.4.0,<0.5.0  # F6 MCP server, mounted at "/" (see app/main.py) for remote/multi-tenant reach (ChatGPT, Grok, claude.ai) with a real OAuth "Connect" flow, alongside the existing stdio-local install. 0.4.0 (confirmed live on PyPI) adds the decide_approval tool (see mcp_provider.py's decide_approval).
+tracyn-mcp>=0.5.0,<0.6.0  # F6 MCP server, mounted at "/" (see app/main.py) for remote/multi-tenant reach (ChatGPT, Grok, claude.ai) with a real OAuth "Connect" flow, alongside the existing stdio-local install. 0.5.0 (confirmed live on PyPI) is the tracyn_mcp rename of what was auditagent-mcp/auditagent_mcp.
 # spaCy model as a wheel so plain `pip install -r` (Hugging Face Spaces) gets
 # it without a separate `spacy download` step.
 en_core_web_sm @ https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.7.1/en_core_web_sm-3.7.1-py3-none-any.whl

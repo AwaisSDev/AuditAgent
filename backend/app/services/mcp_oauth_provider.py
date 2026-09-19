@@ -1,5 +1,5 @@
 """OAuth 2.0 Authorization Server implementation backing the MCP server's
-one-click "Connect" flow (see auditagent_mcp.server.configure_oauth,
+one-click "Connect" flow (see tracyn_mcp.server.configure_oauth,
 routers/oauth.py, and the dashboard's app/(app)/oauth/authorize page).
 
 Deliberately minimal: this isn't a general-purpose OAuth provider, just a

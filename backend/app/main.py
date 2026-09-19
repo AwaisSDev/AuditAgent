@@ -1,7 +1,7 @@
 from contextlib import asynccontextmanager
 
 import sentry_sdk
-from auditagent_mcp.server import configure_backend_url, configure_data_provider, configure_oauth, http_app as mcp_http_app
+from tracyn_mcp.server import configure_backend_url, configure_data_provider, configure_oauth, http_app as mcp_http_app
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -123,6 +123,6 @@ configure_oauth(
 # versions -- confirmed by actually running the full discovery ->
 # registration -> authorize -> token exchange handshake and watching it
 # 404 before this fix. The actual MCP protocol endpoint itself still ends
-# up at exactly "/mcp" (see streamable_http_path in auditagent_mcp/server.py),
+# up at exactly "/mcp" (see streamable_http_path in tracyn_mcp/server.py),
 # same external URL as before -- only the OAuth routes' position changes.
 app.mount("/", mcp_http_app())

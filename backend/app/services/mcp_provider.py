@@ -1,4 +1,4 @@
-"""In-process implementation of auditagent_mcp.server.DataProvider.
+"""In-process implementation of tracyn_mcp.server.DataProvider.
 
 Wired in via configure_data_provider (see main.py) so the MCP tools --
 mounted inside this same backend -- call straight into this process's
