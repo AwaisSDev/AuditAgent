@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Landing } from "@/components/landing/landing";
 import { SITE_URL } from "@/lib/site";
 
-const TITLE = "Tracyn: It's not a log. It's evidence.";
+const TITLE = "Tracyn: It’s not a log. It’s evidence.";
 const DESCRIPTION =
   "Tracyn records every action your AI agents take, pauses the risky ones for a human, and turns the trail into audit-ready evidence. One decorator to start.";
 
