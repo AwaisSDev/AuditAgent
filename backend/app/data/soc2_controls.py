@@ -16,6 +16,13 @@ class Soc2Control(BaseModel):
     evidence_note: str
 
 
+class Soc2ControlOut(Soc2Control):
+    # Computed per-workspace by services/soc2_evidence.py -- falls back to
+    # evidence_note verbatim for a control that function doesn't cover yet,
+    # so the page never shows a blank instead of at least the static claim.
+    live_evidence: str
+
+
 SOC2_CONTROLS: list[Soc2Control] = [
     Soc2Control(
         control_id="CC6.1",

@@ -1,17 +1,19 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
+import { CircleCheck } from "lucide-react";
 import { api, downloadFile } from "@/lib/api";
 import { useWorkspace } from "@/lib/workspace-context";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import type { Soc2Control } from "@/lib/types";
+import type { Soc2ControlOut } from "@/lib/types";
 
 export default function Soc2Page() {
   const { workspace } = useWorkspace();
   const { data: controls = [], isLoading } = useQuery({
-    queryKey: ["soc2-controls"],
-    queryFn: () => api.get<Soc2Control[]>("/v1/soc2/controls"),
+    queryKey: ["soc2-controls", workspace?.id],
+    queryFn: () => api.get<Soc2ControlOut[]>(`/v1/workspaces/${workspace!.id}/soc2/controls`),
+    enabled: !!workspace,
   });
 
   return (
@@ -53,8 +55,11 @@ export default function Soc2Page() {
                 </div>
               </div>
               <div className="rounded-md bg-muted/60 px-4 py-3 sm:flex-1">
-                <p className="text-sm font-medium text-foreground">{c.evidence_type}</p>
-                <p className="mt-0.5 text-sm leading-relaxed text-muted-foreground">{c.evidence_note}</p>
+                <p className="font-mono text-xs text-muted-foreground">{c.evidence_type}</p>
+                <div className="mt-1 flex items-start gap-1.5">
+                  <CircleCheck className="mt-0.5 h-4 w-4 shrink-0 text-[#2F5D3A] dark:text-[#8FCBA3]" strokeWidth={2} />
+                  <p className="text-sm leading-relaxed text-foreground">{c.live_evidence}</p>
+                </div>
               </div>
             </div>
           ))}

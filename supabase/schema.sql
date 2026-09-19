@@ -73,6 +73,33 @@ create table policies (
   updated_at   timestamptz not null default now()
 );
 
+-- Archives the previous rules_yaml whenever a policy's rules actually
+-- change (not on every update -- see the trigger's WHEN clause -- a
+-- rename alone shouldn't create a history entry). Backs the SOC 2 CC8.1
+-- ("change management") evidence: without this, only the current policy
+-- was ever queryable, so a claim like "previous ruleset is recoverable"
+-- would have been false.
+create table policy_history (
+  id           uuid primary key default gen_random_uuid(),
+  workspace_id uuid not null references workspaces(id) on delete cascade,
+  rules_yaml   text not null,
+  replaced_at  timestamptz not null default now()
+);
+create index idx_policy_history_workspace on policy_history(workspace_id, replaced_at desc);
+
+create or replace function log_policy_history() returns trigger as $$
+begin
+  insert into policy_history (workspace_id, rules_yaml, replaced_at)
+  values (old.workspace_id, old.rules_yaml, now());
+  return new;
+end;
+$$ language plpgsql;
+
+create trigger trg_policies_log_history before update on policies
+  for each row
+  when (old.rules_yaml is distinct from new.rules_yaml)
+  execute function log_policy_history();
+
 -- Tracks the tip of each workspace's hash chain so the trigger below can
 -- compute prev_hash without scanning the events table on every insert.
 create table workspace_chain_heads (

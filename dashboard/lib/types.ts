@@ -105,3 +105,9 @@ export interface Soc2Control {
   evidence_type: string;
   evidence_note: string;
 }
+
+export interface Soc2ControlOut extends Soc2Control {
+  // Computed for this specific workspace -- falls back to evidence_note
+  // verbatim for a control the backend doesn't have live data for yet.
+  live_evidence: string;
+}
