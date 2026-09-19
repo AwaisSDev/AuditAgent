@@ -1,22 +1,22 @@
-# AuditAgent
+# Tracyn
 
 Compliance infrastructure for AI agent startups: a Python SDK that logs every
 agent action, a policy engine that routes risky actions to a human via
 Slack, an audit dashboard, an evidence-pack generator for security
 questionnaires, and a Claude MCP server to query it all conversationally.
 
-Live at: dashboard `https://auditagent.cloud`, API `https://awais1290-auditagent.hf.space`,
-MCP `https://mcp.auditagent.cloud` (a reverse proxy in front of the same API).
+Live at: dashboard `https://tracyn.online`, API `https://awais1290-auditagent.hf.space`,
+MCP `https://mcp.tracyn.online` (a reverse proxy in front of the same API).
 
 ## Repo map
 
 ```
 supabase/schema.sql       F5 data model — tables, RLS, hash-chain triggers  [build step 1]
 backend/                  FastAPI app + arq worker                          [steps 2, 3, 6, 9]
-sdk/                      `auditagent` — pip-installable SDK                [step 4]
+sdk/                      `tracyn` — pip-installable SDK                [step 4]
 slack-app/manifest.yaml   Slack app manifest (F3)                           [step 5]
 dashboard/                Next.js 14 dashboard                              [step 7]
-mcp-server/               `auditagent-mcp` — Claude MCP server              [step 8]
+mcp-server/               `tracyn-mcp` — Claude MCP server              [step 8]
 docs/MANUAL_SETUP.md      Every account/dashboard click a human must do
 docs/DEPLOYMENT.md        Env vars + how each piece ships
 docs/GETTING_STARTED.md   Customer-facing onboarding walkthrough
@@ -26,7 +26,7 @@ SUPPORT.md                Support channels, response-time targets, security repo
 
 ## Architecture, in one pass
 
-1. Dev installs `auditagent`, wraps a tool call with `@audit.track(...)`.
+1. Dev installs `tracyn`, wraps a tool call with `@audit.track(...)`.
 2. On init, the SDK fetches the workspace's policy YAML (F2).
 3. If the policy flags the action, the SDK calls `POST /v1/approvals/request`
    *before* running the wrapped function, then blocks (polling) until a

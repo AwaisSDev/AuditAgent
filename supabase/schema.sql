@@ -1,4 +1,4 @@
--- AuditAgent — Supabase schema
+-- Tracyn — Supabase schema
 -- Run in the Supabase SQL editor (or via `supabase db push`) on a fresh project.
 -- Requires: pgcrypto (for gen_random_uuid/digest) — enabled by default on Supabase.
 

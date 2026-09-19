@@ -3,7 +3,7 @@ name: Deploy backend to Hugging Face Space
 # Pushes the backend/ folder to a Docker Space on every change. Needs two
 # repository settings (Settings -> Secrets and variables -> Actions):
 #   secret  HF_TOKEN  a Hugging Face access token with "write" permission
-#   variable HF_SPACE the Space id, e.g. awaissdev/auditagent-api
+#   variable HF_SPACE the Space id, e.g. awaissdev/tracyn-api
 
 on:
   push:

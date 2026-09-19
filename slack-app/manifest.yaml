@@ -1,11 +1,11 @@
 display_information:
-  name: AuditAgent
+  name: Tracyn
   description: Approve or reject AI agent actions right from Slack.
   background_color: "#1a1a2e"
 
 features:
   bot_user:
-    display_name: AuditAgent
+    display_name: Tracyn
     always_online: true
 
 oauth_config:

@@ -12,7 +12,7 @@ Spaces are free): its `README.md` front matter points at `space_app.py`,
 which starts Redis and the worker and serves the API on port 7860.
 
 1. Create a Space at huggingface.co/new-space: SDK **Gradio**, template
-   **Blank**, hardware **CPU basic (free)**. Note its id, e.g. `you/AuditAgent`.
+   **Blank**, hardware **CPU basic (free)**. Note its id, e.g. `you/Tracyn`.
 2. In the Space's *Settings → Variables and secrets* add the variables listed
    in `backend/README.md` (only `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`,
    `CORS_ORIGINS`, `DASHBOARD_BASE_URL` and `APP_BASE_URL` are required).
@@ -31,7 +31,7 @@ Two services from the same repo (root directory `backend/`), sharing one Redis:
 
 | Service | Start command | Notes |
 |---|---|---|
-| `web` | (default, from `backend/Dockerfile`) `uvicorn app.main:app --host 0.0.0.0 --port $PORT` | Generate a public domain for this one — Railway's own `*.up.railway.app` domain works fine, or point a subdomain of `auditagent.cloud` at it |
+| `web` | (default, from `backend/Dockerfile`) `uvicorn app.main:app --host 0.0.0.0 --port $PORT` | Generate a public domain for this one — Railway's own `*.up.railway.app` domain works fine, or point a subdomain of `tracyn.online` at it |
 | `worker` | override to `arq app.worker.worker_settings.WorkerSettings` | No public domain needed |
 | `Redis` | Railway plugin | Gives both services `REDIS_URL` |
 
@@ -56,8 +56,8 @@ WHOP_WEBHOOK_SECRET
 WHOP_PLAN_STARTER
 WHOP_PLAN_PRO
 APP_BASE_URL=https://awais1290-auditagent.hf.space  # or this Railway service's own domain
-DASHBOARD_BASE_URL=https://auditagent.cloud
-CORS_ORIGINS=https://auditagent.cloud,https://www.auditagent.cloud
+DASHBOARD_BASE_URL=https://tracyn.online
+CORS_ORIGINS=https://tracyn.online,https://www.tracyn.online
 APPROVAL_TIMEOUT_MINUTES=30
 ```
 
@@ -75,8 +75,8 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY
 NEXT_PUBLIC_API_BASE_URL=https://awais1290-auditagent.hf.space
 ```
 
-Domain: `auditagent.cloud` (and `www.auditagent.cloud`), attached in Vercel's
-Domains settings — the Vercel-assigned `https://getauditagent.vercel.app`
+Domain: `tracyn.online` (and `www.tracyn.online`), attached in Vercel's
+Domains settings — the Vercel-assigned `https://tracyn.vercel.app`
 still works too.
 
 ## Database → Supabase

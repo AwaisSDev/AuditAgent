@@ -1,7 +1,7 @@
 # Privacy Policy — DRAFT TEMPLATE, NOT LEGAL ADVICE
 
 > **Read this before using the text below.** This is a generic
-> privacy-policy scaffold describing what the AuditAgent codebase actually
+> privacy-policy scaffold describing what the Tracyn codebase actually
 > does with data today — it is not a finished legal document and not legal
 > advice. If you'll have customers in the EU/UK/California or other
 > regulated jurisdictions, you likely need a DPA (Data Processing
@@ -17,7 +17,7 @@
 **Last updated:** `[date]`
 
 This Privacy Policy describes how `[Company Name]` ("we", "us") handles
-information in connection with the AuditAgent Service.
+information in connection with the Tracyn Service.
 
 ### 1. What we collect
 
@@ -85,7 +85,7 @@ own policies prohibit collecting.
 ### 6. Your rights
 
 Depending on your jurisdiction, you may have rights to access, correct,
-export, or delete your personal data. Contact `[privacy@auditagent.dev]`
+export, or delete your personal data. Contact `[privacy@tracyn.online]`
 to exercise these. `[If you'll serve EU/UK/California residents, this
 section needs the specific GDPR/CCPA rights language and response-time
 commitments those laws require — a generic paragraph isn't sufficient on
@@ -98,4 +98,4 @@ We'll post updates here and, for material changes, notify you via
 
 ### 8. Contact
 
-`[Company Name]`, `[address]` — `[privacy@auditagent.dev]`
+`[Company Name]`, `[address]` — `[privacy@tracyn.online]`

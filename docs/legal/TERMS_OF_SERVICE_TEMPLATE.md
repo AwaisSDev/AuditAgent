@@ -17,14 +17,14 @@
 **Last updated:** `[date]`
 
 These Terms of Service ("Terms") govern access to and use of `[Company
-Name]`'s ("we", "us", "our") AuditAgent product (the "Service"), operated
-at `[app.auditagent.dev]`. By creating an account or using the Service,
+Name]`'s ("we", "us", "our") Tracyn product (the "Service"), operated
+at `[app.tracyn.online]`. By creating an account or using the Service,
 you agree to these Terms on behalf of yourself and, if applicable, the
 organization you represent ("you", "Customer").
 
 ### 1. The Service
 
-AuditAgent provides logging, policy enforcement, and evidence-generation
+Tracyn provides logging, policy enforcement, and evidence-generation
 tooling for AI agent actions, as described on our website and in-product
 documentation. We may change or discontinue features with `[notice
 period, e.g. 30 days]` notice for material reductions in functionality on
@@ -34,7 +34,7 @@ paid plans.
 
 You're responsible for the security of your account credentials and API
 keys, and for all activity under your account. Notify us promptly at
-`[security@auditagent.dev]` if you suspect unauthorized access.
+`[security@tracyn.online]` if you suspect unauthorized access.
 
 ### 3. Customer Data
 
@@ -115,4 +115,4 @@ effect. Continued use after that constitutes acceptance.
 
 ### 12. Contact
 
-`[Company Name]`, `[address]` — `[legal@auditagent.dev]`
+`[Company Name]`, `[address]` — `[legal@tracyn.online]`

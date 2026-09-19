@@ -100,7 +100,7 @@ async def get_approval_status(
     auth: WorkspaceKeyAuth = Depends(get_api_key_auth),
 ) -> ApprovalStatusOut:
     """Polled every ~2s by every SDK call waiting on a decision (see
-    audagent/client.py's POLL_INTERVAL_SECONDS) -- for potentially several
+    tracyn/client.py's POLL_INTERVAL_SECONDS) -- for potentially several
     concurrent agents at once, so this needs the same off-event-loop-thread
     + retry-on-transient-failure treatment `run_db` gives every other DB
     call, not a bare synchronous `.execute()`. Without it, a single dropped

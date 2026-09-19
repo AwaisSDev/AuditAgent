@@ -37,7 +37,7 @@ Status updates are posted to `mawais9171@gmail.com` on request and, once a
 status-page vendor (e.g. Instatus/Statuspage) is set up, at a public status
 URL to be added here. Internal on-call process: the operator is paged
 directly (no formal rotation yet — single-operator team). This section will
-be expanded once AuditAgent has more than one person on call.
+be expanded once Tracyn has more than one person on call.
 
 ## Feature requests and bugs
 
