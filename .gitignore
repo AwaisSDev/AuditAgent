@@ -37,3 +37,6 @@ Thumbs.db
 .seed*
 .new_token
 .browser_token
+
+.vercel
+.env*
