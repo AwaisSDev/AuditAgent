@@ -1,6 +1,6 @@
-# auditagent-mcp
+# tracyn-mcp
 
-An MCP server exposing your AuditAgent workspace as five tools:
+An MCP server exposing your Tracyn workspace as five tools:
 `get_recent_actions`, `get_pending_approvals`, `decide_approval`,
 `draft_questionnaire_answers`, `get_compliance_summary`. Works from Claude,
 ChatGPT, Grok, or any other MCP client — two different ways to connect,
@@ -26,10 +26,10 @@ they can only reach a server over the network, not installed via pip. This
 server is already mounted at `/mcp` on the deployed backend (see
 `backend/app/main.py`) — add `<your backend's base URL>/mcp` as a custom
 connector, e.g. this deployment:
-`https://mcp.auditagent.cloud/mcp`:
+`https://mcp.tracyn.online/mcp`:
 
 - **Claude.ai**: Settings → Connectors → Add custom connector → paste the URL,
-  and use your AuditAgent API key (Settings → API keys in the dashboard) as
+  and use your Tracyn API key (Settings → API keys in the dashboard) as
   the bearer token when prompted.
 - **ChatGPT**: Settings → Connectors → Developer mode (Plus/Pro and up) → add
   a custom connector with the same URL and bearer token.
@@ -45,15 +45,15 @@ These run as a local process on your own machine, so they can spawn this
 server directly instead of connecting to the hosted one.
 
 ```bash
-pip install auditagent-mcp
+pip install tracyn-mcp
 ```
 
-Get a workspace API key from **Settings → API keys** in the AuditAgent
+Get a workspace API key from **Settings → API keys** in the Tracyn
 dashboard, then set:
 
 ```bash
-export AUDITAGENT_API_KEY=al_live_...
-export AUDITAGENT_BASE_URL=https://mcp.auditagent.cloud   # optional, this is the default
+export TRACYN_API_KEY=al_live_...
+export TRACYN_BASE_URL=https://mcp.tracyn.online   # optional, this is the default
 ```
 
 Add to your MCP config (Claude Desktop: `claude_desktop_config.json`; Claude
@@ -62,10 +62,10 @@ Code: `.mcp.json` or `claude mcp add`):
 ```json
 {
   "mcpServers": {
-    "auditagent": {
-      "command": "auditagent-mcp",
+    "tracyn": {
+      "command": "tracyn-mcp",
       "env": {
-        "AUDITAGENT_API_KEY": "al_live_..."
+        "TRACYN_API_KEY": "al_live_..."
       }
     }
   }

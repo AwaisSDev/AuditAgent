@@ -3,9 +3,9 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "auditagent-mcp"
-version = "0.4.1"
-description = "MCP server for AuditAgent — ask about your agent logs, approvals, and compliance posture in plain English, from Claude, ChatGPT, Grok, or any other MCP client."
+name = "tracyn-mcp"
+version = "0.5.0"
+description = "MCP server for Tracyn — ask about your agent logs, approvals, and compliance posture in plain English, from Claude, ChatGPT, Grok, or any other MCP client."
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
@@ -25,7 +25,7 @@ dependencies = [
 dev = ["pytest>=8.0"]
 
 [project.scripts]
-auditagent-mcp = "auditagent_mcp.server:run"
+tracyn-mcp = "tracyn_mcp.server:run"
 
 [tool.hatch.build.targets.wheel]
-packages = ["auditagent_mcp"]
+packages = ["tracyn_mcp"]

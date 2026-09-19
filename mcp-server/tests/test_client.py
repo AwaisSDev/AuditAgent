@@ -10,13 +10,13 @@ import json
 import httpx
 import pytest
 
-from auditagent_mcp import client
+from tracyn_mcp import client
 
 
 def _install_transport(monkeypatch, handler):
     def _client(api_key: str) -> httpx.Client:
         if not api_key:
-            raise RuntimeError("No AuditAgent API key available — see README.md for setup.")
+            raise RuntimeError("No Tracyn API key available — see README.md for setup.")
         return httpx.Client(
             base_url=client._base_url,
             headers={"Authorization": f"Bearer {api_key}"},
@@ -28,7 +28,7 @@ def _install_transport(monkeypatch, handler):
 
 
 def test_client_raises_when_no_api_key_is_given():
-    with pytest.raises(RuntimeError, match="No AuditAgent API key"):
+    with pytest.raises(RuntimeError, match="No Tracyn API key"):
         client.get_pending_approvals("")
 
 
@@ -149,7 +149,7 @@ def test_a_non_2xx_response_raises(monkeypatch):
 def test_set_base_url_overrides_the_default_for_subsequent_calls(monkeypatch):
     # The whole point of set_base_url: a host app (backend/app/main.py)
     # that mounts this package in-process must be able to point it at its
-    # own real origin, since it can't rely on AUDITAGENT_BASE_URL having
+    # own real origin, since it can't rely on TRACYN_BASE_URL having
     # been set before this module was first imported.
     original = client._base_url
     try:

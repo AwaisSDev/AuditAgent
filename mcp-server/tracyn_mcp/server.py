@@ -1,4 +1,4 @@
-"""F6 — AuditAgent MCP server.
+"""F6 — Tracyn MCP server.
 
 Exposes a workspace's logs, approvals, and compliance posture as MCP tools
 so a developer can ask about their agent conversationally from an MCP
@@ -10,13 +10,13 @@ Two ways to run this, both exposing the same five tools:
 
 - `run()` — stdio transport, for Claude Desktop/Claude Code running the
   server as a local subprocess. Single workspace per process: reads
-  AUDITAGENT_API_KEY from the environment once at call time.
+  TRACYN_API_KEY from the environment once at call time.
 - `http_app()` — an ASGI app (Streamable HTTP transport), for hosting
   remotely so claude.ai, ChatGPT, and Grok's custom-connector flows can
   reach it over the network (a hosted chat product has no local machine
   to spawn a stdio subprocess on, so stdio is not reachable from any of
   them — see PRODUCTION_READINESS.md). Multi-tenant: every request must
-  carry the caller's own AuditAgent API key as its bearer token, which the
+  carry the caller's own Tracyn API key as its bearer token, which the
   `_BearerTokenMiddleware` below picks up per-request; nothing server-wide
   is shared between callers. Meant to be mounted onto an existing host
   app (see backend/app/main.py), not run standalone.
@@ -35,10 +35,10 @@ from mcp.server.fastmcp import FastMCP
 from mcp.server.transport_security import TransportSecuritySettings
 from starlette.types import ASGIApp, Receive, Scope, Send
 
-from auditagent_mcp import client
+from tracyn_mcp import client
 
 mcp = FastMCP(
-    "auditagent",
+    "tracyn",
     # The default "/mcp" -- the host app (backend/app/main.py) mounts
     # http_app() at "/" (not "/mcp"), so this path is what actually puts
     # the MCP protocol endpoint at "/mcp" externally. When OAuth is
@@ -50,7 +50,7 @@ mcp = FastMCP(
     streamable_http_path="/mcp",
     # DNS-rebinding protection (Host/Origin header allowlisting) exists for
     # setups that trust same-origin browser requests; ours doesn't -- every
-    # request must carry a real AuditAgent API key as its bearer token,
+    # request must carry a real Tracyn API key as its bearer token,
     # checked by the backend itself, so Host-header matching would only
     # add a brittle, easy-to-misconfigure second gate (and it auto-enables
     # with a localhost-only allowlist whenever FastMCP's default `host`
@@ -80,12 +80,12 @@ def _resolve_api_key() -> str:
     key = _current_api_key.get()
     if key:
         return key
-    key = os.environ.get("AUDITAGENT_API_KEY")
+    key = os.environ.get("TRACYN_API_KEY")
     if not key:
         raise RuntimeError(
-            "No AuditAgent API key available. For local/stdio use, set the "
-            "AUDITAGENT_API_KEY environment variable. For the hosted remote "
-            "server, connect with your AuditAgent API key as the bearer token."
+            "No Tracyn API key available. For local/stdio use, set the "
+            "TRACYN_API_KEY environment variable. For the hosted remote "
+            "server, connect with your Tracyn API key as the bearer token."
         )
     return key
 
@@ -161,7 +161,7 @@ def configure_oauth(
     see PRODUCTION_READINESS.md).
 
     The token this issues (see the provider's exchange_authorization_code)
-    is a real AuditAgent API key, not a separate credential type -- so
+    is a real Tracyn API key, not a separate credential type -- so
     load_access_token's job is just verifying an API key exactly like the
     backend already does elsewhere, and the *same* verification correctly
     accepts a pre-existing key a user pastes in directly too, without going
@@ -254,7 +254,7 @@ async def draft_questionnaire_answers(questions: list[str]) -> list[dict]:
     grounded in this workspace's actual logged events, with cited event ids.
 
     This is a draft only — nothing is submitted or exported. For a full
-    questionnaire file (PDF/CSV/XLSX), upload it in the AuditAgent dashboard
+    questionnaire file (PDF/CSV/XLSX), upload it in the Tracyn dashboard
     instead; this tool is for one-off conversational questions.
 
     Args:
@@ -323,7 +323,7 @@ async def _ensure_session_manager_started() -> None:
 class _BearerTokenMiddleware:
     """Reads the caller's `Authorization: Bearer <token>` header and makes
     it available to tool handlers via `_current_api_key`. Not OAuth: the
-    token IS the caller's real AuditAgent API key, validated downstream by
+    token IS the caller's real Tracyn API key, validated downstream by
     the real backend (app/routers/mcp_data.py's get_api_key_auth) exactly
     like the SDK's own requests — this middleware only extracts and scopes
     it per-request, it does not itself decide whether the key is valid.

@@ -11,7 +11,7 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from auditagent_mcp import server
+from tracyn_mcp import server
 
 
 def test_all_five_tools_are_registered():
@@ -113,7 +113,7 @@ def test_every_tool_has_a_non_empty_docstring(tool_name):
 
 
 def test_resolve_api_key_uses_the_contextvar_when_set(monkeypatch):
-    monkeypatch.delenv("AUDITAGENT_API_KEY", raising=False)
+    monkeypatch.delenv("TRACYN_API_KEY", raising=False)
     token = server._current_api_key.set("al_live_from_request")
     try:
         assert server._resolve_api_key() == "al_live_from_request"
@@ -122,15 +122,15 @@ def test_resolve_api_key_uses_the_contextvar_when_set(monkeypatch):
 
 
 def test_resolve_api_key_falls_back_to_the_environment_variable(monkeypatch):
-    monkeypatch.setenv("AUDITAGENT_API_KEY", "al_live_from_env")
+    monkeypatch.setenv("TRACYN_API_KEY", "al_live_from_env")
     assert server._current_api_key.get() is None  # not set by any request in this test
     assert server._resolve_api_key() == "al_live_from_env"
 
 
 def test_resolve_api_key_raises_when_neither_is_available(monkeypatch):
-    monkeypatch.delenv("AUDITAGENT_API_KEY", raising=False)
+    monkeypatch.delenv("TRACYN_API_KEY", raising=False)
     assert server._current_api_key.get() is None
-    with pytest.raises(RuntimeError, match="No AuditAgent API key"):
+    with pytest.raises(RuntimeError, match="No Tracyn API key"):
         server._resolve_api_key()
 
 
@@ -138,7 +138,7 @@ def test_contextvar_takes_priority_over_the_environment_variable(monkeypatch):
     # The hosted/remote path must never silently fall back to a shared
     # server-wide key just because one happens to be set in the process
     # environment -- the per-request caller's key always wins.
-    monkeypatch.setenv("AUDITAGENT_API_KEY", "al_live_server_wide")
+    monkeypatch.setenv("TRACYN_API_KEY", "al_live_server_wide")
     token = server._current_api_key.set("al_live_per_request")
     try:
         assert server._resolve_api_key() == "al_live_per_request"
@@ -154,7 +154,7 @@ def test_framework_auth_context_takes_priority_over_everything(monkeypatch):
     from mcp.server.auth.middleware.bearer_auth import AuthenticatedUser
     from mcp.server.auth.provider import AccessToken
 
-    monkeypatch.setenv("AUDITAGENT_API_KEY", "al_live_server_wide")
+    monkeypatch.setenv("TRACYN_API_KEY", "al_live_server_wide")
     legacy_token = server._current_api_key.set("al_live_legacy_contextvar")
     auth_token = auth_context_var.set(
         AuthenticatedUser(AccessToken(token="al_live_from_oauth", client_id="claude-desktop", scopes=["mcp"]))
@@ -190,7 +190,7 @@ def test_configure_oauth_wires_the_provider_and_token_verifier(monkeypatch):
 
 
 def test_configure_backend_url_points_the_client_at_the_given_origin():
-    from auditagent_mcp import client
+    from tracyn_mcp import client
 
     original = client._base_url
     try:
