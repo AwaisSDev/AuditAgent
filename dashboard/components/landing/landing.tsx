@@ -71,7 +71,7 @@ function Header() {
           <Link href="/" className="flex items-center gap-2.5">
             {/* eslint-disable-next-line @next/next/no-img-element -- next/image's optimizer (sharp) fails on this PNG */}
             <img src="/logo.png" alt="" width={26} height={26} />
-            <span className="text-[17px] font-semibold tracking-[-0.01em]">AuditAgent</span>
+            <span className="text-[17px] font-semibold tracking-[-0.01em]">Tracyn</span>
           </Link>
           <nav className="hidden items-center gap-6 text-[14px] text-[var(--lp-fg-2)] md:flex">
             <a href="#logging" className="hover:text-[var(--lp-fg)]">
@@ -222,7 +222,7 @@ function Promo({
 
 function InstallCard() {
   const [copied, setCopied] = useState(false);
-  const cmd = "pip install AudAgent";
+  const cmd = "pip install tracyn";
 
   async function copy() {
     try {
@@ -274,7 +274,7 @@ export function Landing() {
           id="logging"
           eyebrow="Logging"
           title="One decorator. Every action, on the record."
-          body="Put @audit.track above any function your agent calls. From then on, every time it runs, AuditAgent writes down what happened: what went in, what came out, and when. Your agent doesn't slow down; the bookkeeping happens in the background."
+          body="Put @audit.track above any function your agent calls. From then on, every time it runs, Tracyn writes down what happened: what went in, what came out, and when. Your agent doesn't slow down; the bookkeeping happens in the background."
           cta={{ label: "Read the SDK docs", href: DOCS_URL }}
           media={<LoggingArt />}
         />
@@ -311,7 +311,7 @@ export function Landing() {
           id="evidence"
           eyebrow="Evidence"
           title="Security questionnaires, answered from your logs."
-          body="Upload a security questionnaire. AuditAgent finds the records that answer each question and writes a first draft, with sources. You read and approve every answer before it goes anywhere, then export as a Word document or spreadsheet."
+          body="Upload a security questionnaire. Tracyn finds the records that answer each question and writes a first draft, with sources. You read and approve every answer before it goes anywhere, then export as a Word document or spreadsheet."
           cta={{ label: "How evidence packs work", href: DOCS_URL }}
           media={<EvidenceArt />}
           mediaLeft
@@ -330,7 +330,7 @@ export function Landing() {
           id="mcp"
           eyebrow="MCP"
           title="Ask Claude, ChatGPT, or Grok about your audit trail."
-          body="Connect AuditAgent to Claude, ChatGPT, or Grok and just ask: anything waiting on me? What did the billing agent do last night? It reads the same record as the dashboard, and it can only read."
+          body="Connect Tracyn to Claude, ChatGPT, or Grok and just ask: anything waiting on me? What did the billing agent do last night? It reads the same record as the dashboard, and it can only read."
           cta={{ label: "Set up the MCP server", href: `${DOCS_URL}#mcp` }}
           media={<McpArt />}
           mediaLeft
@@ -367,7 +367,7 @@ export function Landing() {
             <div className="flex items-center gap-2">
               {/* eslint-disable-next-line @next/next/no-img-element -- see header */}
               <img src="/logo.png" alt="" width={18} height={18} />
-              <span>AuditAgent · compliance infrastructure for AI agent teams</span>
+              <span>Tracyn · compliance infrastructure for AI agent teams</span>
             </div>
             <div className="flex gap-5">
               <Link href={DOCS_URL} className="hover:text-[var(--lp-fg)]">

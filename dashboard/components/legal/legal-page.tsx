@@ -20,7 +20,7 @@ export function LegalPage({
           <Link href="/" className="flex items-center gap-2.5">
             {/* eslint-disable-next-line @next/next/no-img-element -- next/image's optimizer (sharp) fails on this PNG */}
             <img src="/logo.png" alt="" width={22} height={22} />
-            <span className="text-[15px] font-semibold tracking-[-0.01em]">AuditAgent</span>
+            <span className="text-[15px] font-semibold tracking-[-0.01em]">Tracyn</span>
           </Link>
           <nav className="flex items-center gap-5 text-[13px] text-muted-foreground">
             <Link href="/privacy" className="hover:text-foreground">
@@ -43,7 +43,7 @@ export function LegalPage({
 
       <footer className="border-t border-border">
         <div className="mx-auto flex max-w-[760px] items-center justify-between px-6 py-8 text-[13px] text-muted-foreground">
-          <span>AuditAgent · compliance infrastructure for AI agent teams</span>
+          <span>Tracyn · compliance infrastructure for AI agent teams</span>
           <a href="mailto:mawais9171@gmail.com" className="hover:text-foreground">
             Contact
           </a>

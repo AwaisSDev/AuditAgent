@@ -7,9 +7,9 @@ import "./globals.css";
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 const mono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-mono" });
 
-const TITLE = "AuditAgent";
+const TITLE = "Tracyn";
 const DESCRIPTION =
-  "AuditAgent records every action your AI agents take, pauses the risky ones for a human, and turns the trail into audit-ready evidence.";
+  "Tracyn records every action your AI agents take, pauses the risky ones for a human, and turns the trail into audit-ready evidence.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),

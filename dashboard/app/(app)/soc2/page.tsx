@@ -20,13 +20,13 @@ export default function Soc2Page() {
         <div className="min-w-0 space-y-1">
           <h1 className="text-2xl font-semibold tracking-tight">SOC 2 control mapping</h1>
           <p className="max-w-xl text-sm text-muted-foreground">
-            Which of your AuditAgent evidence already speaks to common SOC 2 controls. Not audit certification, just
+            Which of your Tracyn evidence already speaks to common SOC 2 controls. Not audit certification, just
             a head start for your auditor conversation.
           </p>
         </div>
         <Button
           variant="outline"
-          onClick={() => downloadFile(`/v1/workspaces/${workspace!.id}/soc2/export.csv`, "auditagent-soc2-mapping.csv")}
+          onClick={() => downloadFile(`/v1/workspaces/${workspace!.id}/soc2/export.csv`, "tracyn-soc2-mapping.csv")}
           disabled={!workspace}
         >
           Export CSV

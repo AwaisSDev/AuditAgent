@@ -4,7 +4,7 @@ import { LegalPage, H2, P, Ul } from "@/components/legal/legal-page";
 
 const TITLE = "Privacy Policy";
 const DESCRIPTION =
-  "How AuditAgent collects, uses, and protects data when you use our compliance infrastructure for AI agent teams.";
+  "How Tracyn collects, uses, and protects data when you use our compliance infrastructure for AI agent teams.";
 const LAST_UPDATED = "September 18, 2026";
 
 export const metadata: Metadata = {
@@ -12,14 +12,14 @@ export const metadata: Metadata = {
   description: DESCRIPTION,
   alternates: { canonical: `${SITE_URL}/privacy` },
   openGraph: {
-    title: `${TITLE} / AuditAgent`,
+    title: `${TITLE} / Tracyn`,
     description: DESCRIPTION,
     url: `${SITE_URL}/privacy`,
-    siteName: "AuditAgent",
+    siteName: "Tracyn",
     images: [{ url: "/logo.png", width: 512, height: 512 }],
     type: "website",
   },
-  twitter: { card: "summary", title: `${TITLE} / AuditAgent`, description: DESCRIPTION, images: ["/logo.png"] },
+  twitter: { card: "summary", title: `${TITLE} / Tracyn`, description: DESCRIPTION, images: ["/logo.png"] },
 };
 
 export default function PrivacyPolicyPage() {
@@ -32,17 +32,17 @@ export default function PrivacyPolicyPage() {
           __html: JSON.stringify({
             "@context": "https://schema.org",
             "@type": "WebPage",
-            name: "AuditAgent Privacy Policy",
+            name: "Tracyn Privacy Policy",
             url: `${SITE_URL}/privacy`,
-            isPartOf: { "@type": "WebSite", name: "AuditAgent", url: SITE_URL },
+            isPartOf: { "@type": "WebSite", name: "Tracyn", url: SITE_URL },
             dateModified: "2026-09-18",
           }),
         }}
       />
 
       <P>
-        This Privacy Policy describes how AuditAgent (&ldquo;we&rdquo;, &ldquo;us&rdquo;) handles
-        information in connection with the AuditAgent Service. AuditAgent is currently operated by
+        This Privacy Policy describes how Tracyn (&ldquo;we&rdquo;, &ldquo;us&rdquo;) handles
+        information in connection with the Tracyn Service. Tracyn is currently operated by
         an individual rather than a registered legal entity; contact details are in §8.
       </P>
 
@@ -149,7 +149,7 @@ export default function PrivacyPolicyPage() {
 
       <H2>8. Contact</H2>
       <P>
-        AuditAgent, <a href="mailto:mawais9171@gmail.com" className="underline">mawais9171@gmail.com</a>
+        Tracyn, <a href="mailto:mawais9171@gmail.com" className="underline">mawais9171@gmail.com</a>
       </P>
     </LegalPage>
   );

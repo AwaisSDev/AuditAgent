@@ -5,7 +5,7 @@ import { ForceLightTheme } from "@/components/force-light-theme";
 export const metadata: Metadata = {
   title: "Docs",
   description:
-    "Get an AuditAgent workspace running end to end: install the SDK, set a policy, route approvals to Slack, and answer security questionnaires from your logs.",
+    "Get a Tracyn workspace running end to end: install the SDK, set a policy, route approvals to Slack, and answer security questionnaires from your logs.",
 };
 
 function Code({ children }: { children: string }) {
@@ -49,7 +49,7 @@ export default function DocsPage() {
           <Link href="/" className="flex items-center gap-2">
             {/* eslint-disable-next-line @next/next/no-img-element -- next/image's optimizer (sharp) fails on this PNG */}
             <img src="/logo.png" alt="" width={22} height={22} />
-            <span className="text-[15px] font-semibold tracking-tight">AuditAgent</span>
+            <span className="text-[15px] font-semibold tracking-tight">Tracyn</span>
           </Link>
           <Link
             href="/login"
@@ -80,16 +80,16 @@ export default function DocsPage() {
               In the dashboard, open <strong>Settings &rarr; API Keys</strong>. Click <strong>Create key</strong>,
               give it a name that says where it&apos;ll live (e.g. <code>prod-checkout-agent</code>), and
               copy the value shown. It&apos;s only shown once, so store it as an environment variable
-              (<code>AUDITAGENT_API_KEY</code>) wherever your agent runs.
+              (<code>TRACYN_API_KEY</code>) wherever your agent runs.
             </p>
           </Section>
 
           <Section step={3} title="Install the SDK">
             <p>One decorator is the whole integration for logging:</p>
-            <Code>{`pip install AudAgent`}</Code>
-            <Code>{`from audagent import AuditAgent
+            <Code>{`pip install tracyn`}</Code>
+            <Code>{`from tracyn import Tracyn
 
-audit = AuditAgent(api_key="AUDITAGENT_API_KEY", agent_name="billing-bot")
+audit = Tracyn(api_key="TRACYN_API_KEY", agent_name="billing-bot")
 
 @audit.track(action_type="external", action_name="send_refund")
 def send_refund(customer_id: str, amount_cents: int):
@@ -129,7 +129,7 @@ def send_refund(customer_id: str, amount_cents: int):
           <Section step={6} title="Answer a security questionnaire in minutes">
             <p>
               Under Questionnaires, upload a customer&apos;s security or compliance questionnaire (PDF,
-              DOCX, or plain text). AuditAgent parses out individual questions, finds your actual logged
+              DOCX, or plain text). Tracyn parses out individual questions, finds your actual logged
               events that are relevant evidence for each one, and drafts a cited answer. You review and
               edit every answer before exporting; nothing goes to a customer without a human reading it
               first.
@@ -138,7 +138,7 @@ def send_refund(customer_id: str, amount_cents: int):
 
           <Section step={7} title="What SOC 2 mapping actually gives you">
             <p>
-              The SOC 2 page maps common Trust Services Criteria to what AuditAgent is logging for you.
+              The SOC 2 page maps common Trust Services Criteria to what Tracyn is logging for you.
               It&apos;s a starting point for your own audit prep, not a certification. Talk to an auditor
               before making that claim externally.
             </p>
@@ -146,28 +146,28 @@ def send_refund(customer_id: str, amount_cents: int):
 
           <Section step={8} id="mcp" title="Ask Claude, ChatGPT, or Grok about your audit trail">
             <p>
-              AuditAgent also runs as an MCP server, so you can ask an AI assistant things like
+              Tracyn also runs as an MCP server, so you can ask an AI assistant things like
               &ldquo;anything waiting on me?&rdquo; or &ldquo;what did the billing agent do last
               night?&rdquo; directly. It reads the same record as the dashboard, and it can only read.
               Two ways to connect, depending on which assistant:
             </p>
             <p>
               <strong>Claude.ai, ChatGPT, or Grok</strong> (hosted, no install): these run in the browser
-              with no local machine to install anything on, so they connect to AuditAgent&apos;s own
+              with no local machine to install anything on, so they connect to Tracyn&apos;s own
               hosted MCP endpoint instead. Add a custom connector pointing at your deployed
-              backend&apos;s <code>/mcp</code> path, using your AuditAgent API key as the bearer token
+              backend&apos;s <code>/mcp</code> path, using your Tracyn API key as the bearer token
               when prompted.
             </p>
             <p>
               <strong>Claude Desktop or Claude Code</strong> (local): these run as a process on your own
               machine, so they can run the server directly:
             </p>
-            <Code>{`pip install auditagent-mcp`}</Code>
+            <Code>{`pip install tracyn-mcp`}</Code>
             <Code>{`{
   "mcpServers": {
-    "auditagent": {
-      "command": "auditagent-mcp",
-      "env": { "AUDITAGENT_API_KEY": "al_live_..." }
+    "tracyn": {
+      "command": "tracyn-mcp",
+      "env": { "TRACYN_API_KEY": "al_live_..." }
     }
   }
 }`}</Code>
@@ -176,7 +176,7 @@ def send_refund(customer_id: str, amount_cents: int):
 
         <div className="mt-4 border-t border-border pt-8 text-[15px] text-muted-foreground">
           <p>
-            The SDK also ships an offline <code>audagent</code> CLI for validating a policy file before
+            The SDK also ships an offline <code>tracyn</code> CLI for validating a policy file before
             it ships, and supports async functions the same way as sync ones. Stuck on something not
             covered here? Email{" "}
             <a href="mailto:mawais9171@gmail.com" className="text-foreground underline underline-offset-2">

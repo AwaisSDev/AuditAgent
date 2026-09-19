@@ -24,14 +24,14 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (workspaceId) return;
-    const stored = typeof window !== "undefined" ? localStorage.getItem("auditagent_workspace_id") : null;
+    const stored = typeof window !== "undefined" ? localStorage.getItem("tracyn_workspace_id") : null;
     const initial = stored && workspaces.some((w) => w.id === stored) ? stored : workspaces[0]?.id;
     if (initial) setWorkspaceIdState(initial);
   }, [workspaces, workspaceId]);
 
   function setWorkspaceId(id: string) {
     setWorkspaceIdState(id);
-    localStorage.setItem("auditagent_workspace_id", id);
+    localStorage.setItem("tracyn_workspace_id", id);
   }
 
   const workspace = workspaces.find((w) => w.id === workspaceId) ?? null;

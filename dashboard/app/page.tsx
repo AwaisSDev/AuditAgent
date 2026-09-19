@@ -2,12 +2,12 @@ import type { Metadata } from "next";
 import { Landing } from "@/components/landing/landing";
 import { SITE_URL } from "@/lib/site";
 
-const TITLE = "AuditAgent: It's not a log. It's evidence.";
+const TITLE = "Tracyn: It's not a log. It's evidence.";
 const DESCRIPTION =
-  "AuditAgent records every action your AI agents take, pauses the risky ones for a human, and turns the trail into audit-ready evidence. One decorator to start.";
+  "Tracyn records every action your AI agents take, pauses the risky ones for a human, and turns the trail into audit-ready evidence. One decorator to start.";
 
 export const metadata: Metadata = {
-  // `absolute` opts out of the root layout's title template (`%s / AuditAgent`)
+  // `absolute` opts out of the root layout's title template (`%s / Tracyn`)
   // -- this title already reads as a complete, standalone tagline.
   title: { absolute: TITLE },
   description: DESCRIPTION,
@@ -18,7 +18,7 @@ export const metadata: Metadata = {
     title: TITLE,
     description: DESCRIPTION,
     url: SITE_URL,
-    siteName: "AuditAgent",
+    siteName: "Tracyn",
     images: [{ url: "/logo.png", width: 512, height: 512 }],
     type: "website",
   },

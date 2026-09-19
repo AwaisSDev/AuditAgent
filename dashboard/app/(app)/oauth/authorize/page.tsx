@@ -65,7 +65,7 @@ function ConsentCard() {
         <CardContent className="space-y-2 p-0 text-center">
           <p className="text-[15px] font-medium">Nothing to approve here.</p>
           <p className="text-sm text-muted-foreground">
-            This page is reached by clicking "Connect" in an app that supports AuditAgent's MCP server, not by
+            This page is reached by clicking "Connect" in an app that supports Tracyn's MCP server, not by
             visiting it directly.
           </p>
         </CardContent>

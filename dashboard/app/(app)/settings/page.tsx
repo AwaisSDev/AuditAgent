@@ -132,7 +132,7 @@ function WorkspaceSettingsCard() {
       </CardHeader>
       <CardContent className="space-y-3">
         <p className="text-xs text-muted-foreground">
-          Set a Slack channel ID once you've installed the AuditAgent Slack app and invited the bot to a channel.
+          Set a Slack channel ID once you've installed the Tracyn Slack app and invited the bot to a channel.
           Otherwise, approval requests fall back to email.
         </p>
         <div>
@@ -280,7 +280,7 @@ function ApiKeysCard() {
         title="Your new API key"
       >
         <p className="mb-3 text-sm text-muted-foreground">
-          Copy this now. It won't be shown again. Set it as <code>AUDITAGENT_API_KEY</code>.
+          Copy this now. It won't be shown again. Set it as <code>TRACYN_API_KEY</code>.
         </p>
         <pre className="overflow-auto whitespace-pre-wrap break-all rounded-md bg-muted p-3 text-xs">{newKey}</pre>
         {copyState === "failed" && (

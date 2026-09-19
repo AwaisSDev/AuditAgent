@@ -4,7 +4,7 @@ import { LegalPage, H2, P, Ul } from "@/components/legal/legal-page";
 
 const TITLE = "Terms of Service";
 const DESCRIPTION =
-  "The terms that govern access to and use of AuditAgent, our compliance infrastructure for AI agent teams.";
+  "The terms that govern access to and use of Tracyn, our compliance infrastructure for AI agent teams.";
 const LAST_UPDATED = "September 18, 2026";
 
 export const metadata: Metadata = {
@@ -12,14 +12,14 @@ export const metadata: Metadata = {
   description: DESCRIPTION,
   alternates: { canonical: `${SITE_URL}/terms` },
   openGraph: {
-    title: `${TITLE} / AuditAgent`,
+    title: `${TITLE} / Tracyn`,
     description: DESCRIPTION,
     url: `${SITE_URL}/terms`,
-    siteName: "AuditAgent",
+    siteName: "Tracyn",
     images: [{ url: "/logo.png", width: 512, height: 512 }],
     type: "website",
   },
-  twitter: { card: "summary", title: `${TITLE} / AuditAgent`, description: DESCRIPTION, images: ["/logo.png"] },
+  twitter: { card: "summary", title: `${TITLE} / Tracyn`, description: DESCRIPTION, images: ["/logo.png"] },
 };
 
 export default function TermsOfServicePage() {
@@ -32,26 +32,26 @@ export default function TermsOfServicePage() {
           __html: JSON.stringify({
             "@context": "https://schema.org",
             "@type": "WebPage",
-            name: "AuditAgent Terms of Service",
+            name: "Tracyn Terms of Service",
             url: `${SITE_URL}/terms`,
-            isPartOf: { "@type": "WebSite", name: "AuditAgent", url: SITE_URL },
+            isPartOf: { "@type": "WebSite", name: "Tracyn", url: SITE_URL },
             dateModified: "2026-09-18",
           }),
         }}
       />
 
       <P>
-        These Terms of Service (&ldquo;Terms&rdquo;) govern access to and use of AuditAgent&rsquo;s
+        These Terms of Service (&ldquo;Terms&rdquo;) govern access to and use of Tracyn&rsquo;s
         (&ldquo;we&rdquo;, &ldquo;us&rdquo;, &ldquo;our&rdquo;) product (the &ldquo;Service&rdquo;),
-        operated at auditagent.cloud. By creating an account or using the Service, you
+        operated at tracyn.online. By creating an account or using the Service, you
         agree to these Terms on behalf of yourself and, if applicable, the organization you
-        represent (&ldquo;you&rdquo;, &ldquo;Customer&rdquo;). AuditAgent is currently operated by
+        represent (&ldquo;you&rdquo;, &ldquo;Customer&rdquo;). Tracyn is currently operated by
         an individual rather than a registered legal entity.
       </P>
 
       <H2>1. The Service</H2>
       <P>
-        AuditAgent provides logging, policy enforcement, and evidence-generation tooling for AI
+        Tracyn provides logging, policy enforcement, and evidence-generation tooling for AI
         agent actions, as described on our website and in-product documentation. We may change or
         discontinue features with 30 days&rsquo; notice for material reductions in functionality
         on paid plans.
@@ -135,7 +135,7 @@ export default function TermsOfServicePage() {
       <H2>10. Governing law and disputes</H2>
       <P>
         <em>
-          [Governing law jurisdiction: not yet set. AuditAgent is currently operated by an
+          [Governing law jurisdiction: not yet set. Tracyn is currently operated by an
           individual rather than a registered company, and this section needs the operator&rsquo;s
           actual country/state of residence before it is legally meaningful. Until then, disputes
           are intended to be resolved by litigation, not arbitration, in the courts of that
@@ -152,7 +152,7 @@ export default function TermsOfServicePage() {
 
       <H2>12. Contact</H2>
       <P>
-        AuditAgent, <a href="mailto:mawais9171@gmail.com" className="underline">mawais9171@gmail.com</a>
+        Tracyn, <a href="mailto:mawais9171@gmail.com" className="underline">mawais9171@gmail.com</a>
       </P>
     </LegalPage>
   );

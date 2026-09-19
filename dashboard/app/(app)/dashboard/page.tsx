@@ -48,7 +48,7 @@ export default function TimelinePage() {
           variant="outline"
           size="sm"
           disabled={!workspace}
-          onClick={() => downloadFile(`/v1/workspaces/${workspace!.id}/events/export.csv?${params.toString()}`, "auditagent-events.csv")}
+          onClick={() => downloadFile(`/v1/workspaces/${workspace!.id}/events/export.csv?${params.toString()}`, "tracyn-events.csv")}
         >
           Export CSV
         </Button>

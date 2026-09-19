@@ -282,7 +282,7 @@ export function Hero() {
                 It&rsquo;s evidence.
               </h1>
               <p className="mt-5 max-w-[620px] text-[17px] leading-[1.5] text-[var(--lp-fg-2)] sm:text-[20px]">
-                AuditAgent keeps a record of everything your AI agents do, asks a person before the
+                Tracyn keeps a record of everything your AI agents do, asks a person before the
                 risky parts, and turns it all into evidence your auditors accept.
               </p>
             </div>

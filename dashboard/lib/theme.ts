@@ -2,7 +2,7 @@
 
 export type Theme = "system" | "light" | "dark";
 
-export const THEME_STORAGE_KEY = "auditagent-theme";
+export const THEME_STORAGE_KEY = "tracyn-theme";
 
 export function getStoredTheme(): Theme {
   if (typeof window === "undefined") return "system";

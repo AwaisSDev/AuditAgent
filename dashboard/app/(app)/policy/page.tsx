@@ -212,7 +212,7 @@ export default function PolicyPage() {
             <div className="flex items-center justify-between border-b border-border bg-muted/60 px-3 py-2">
               <div className="flex items-center gap-1.5 text-[13px] text-muted-foreground">
                 <FileCode className="h-3.5 w-3.5" strokeWidth={1.75} />
-                auditagent.policy.yaml
+                tracyn.policy.yaml
               </div>
               <Button size="sm" onClick={() => handleSave(draft)} disabled={save.isPending}>
                 {save.isPending ? "Saving..." : "Save"}

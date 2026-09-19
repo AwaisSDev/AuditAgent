@@ -73,7 +73,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <Link href="/" className="flex items-center gap-2">
             {/* eslint-disable-next-line @next/next/no-img-element -- next/image's optimizer (sharp) fails on this PNG */}
             <img src="/logo.png" alt="" width={20} height={20} />
-            <span className="text-sm font-semibold">AuditAgent</span>
+            <span className="text-sm font-semibold">Tracyn</span>
           </Link>
         </div>
 

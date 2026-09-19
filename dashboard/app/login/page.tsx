@@ -53,7 +53,7 @@ export default function LoginPage() {
           {/* eslint-disable-next-line @next/next/no-img-element -- next/image's optimizer (sharp) fails on this PNG */}
           <img src="/logo.png" alt="" width={36} height={36} className="mb-3 rounded-md" />
           <h1 className="text-lg font-semibold tracking-tight">
-            {mode === "signin" ? "Log in to AuditAgent" : "Create your AuditAgent account"}
+            {mode === "signin" ? "Log in to Tracyn" : "Create your Tracyn account"}
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
             {mode === "signin" ? "Welcome back." : "No email verification needed. You're in instantly."}

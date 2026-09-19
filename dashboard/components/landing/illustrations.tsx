@@ -125,7 +125,7 @@ export function ApprovalsArt() {
             {/* eslint-disable-next-line @next/next/no-img-element -- see header */}
             <img src="/logo.png" alt="" width={26} height={26} />
           </span>
-          <span className="text-[15px] font-semibold">AuditAgent</span>
+          <span className="text-[15px] font-semibold">Tracyn</span>
           <span className="rounded bg-[var(--lp-band)] px-1.5 text-[11px] font-medium text-[var(--lp-fg-3)]">APP</span>
           <span className="text-[13px] text-[var(--lp-fg-3)]">9:40 AM</span>
         </div>
@@ -327,7 +327,7 @@ export function McpArt() {
               <Plus className="h-3.5 w-3.5" />
               <Mic className="h-3.5 w-3.5" />
               <ChevronDown className="h-3 w-3" />
-              <span>AuditAgent connected</span>
+              <span>Tracyn connected</span>
             </div>
             <div className="flex items-center gap-3">
               <span>Opus 5</span>
