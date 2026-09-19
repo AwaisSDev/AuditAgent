@@ -1,15 +1,15 @@
-# AuditAgent
+# Tracyn
 
 Drop-in logging, human approvals, and compliance evidence for AI agents.
 
 ```bash
-pip install AudAgent
+pip install tracyn
 ```
 
 ```python
-from audagent import AuditAgent
+from tracyn import Tracyn
 
-audit = AuditAgent(api_key="al_live_...", agent_name="support-bot")
+audit = Tracyn(api_key="al_live_...", agent_name="support-bot")
 
 @audit.track(action_type="external", action_name="send_email")
 async def send_email(to: str, subject: str, body: str):
@@ -25,7 +25,7 @@ external`, the call blocks until a human approves/rejects/edits it in Slack
 ## Handling rejections
 
 ```python
-from audagent import ApprovalDeniedError, ApprovalTimeoutError
+from tracyn import ApprovalDeniedError, ApprovalTimeoutError
 
 try:
     await send_email("customer@example.com", "Refund approved", "...")
@@ -38,7 +38,7 @@ except ApprovalTimeoutError:
 ## Shutting down cleanly
 
 Logging happens on a background thread so `track()` adds well under 5ms to
-the wrapped call. `AuditAgent` registers an `atexit` hook automatically, so
+the wrapped call. `Tracyn` registers an `atexit` hook automatically, so
 queued events are flushed on normal process exit without any extra setup.
 
 If you want the queue drained at a specific point instead of waiting for
@@ -53,15 +53,15 @@ dashboard at startup. To pin a repo-local policy instead (e.g. for CI, or to
 review policy changes via pull request):
 
 ```python
-audit = AuditAgent(
+audit = Tracyn(
     api_key="al_live_...",
     agent_name="support-bot",
-    policy_yaml=open("auditagent.policy.yaml").read(),
+    policy_yaml=open("tracyn.policy.yaml").read(),
 )
 ```
 
 ```yaml
-# auditagent.policy.yaml
+# tracyn.policy.yaml
 rules:
   - match:
       action_type: external
@@ -77,15 +77,15 @@ what a given action would resolve to under it — both run offline, no API
 key needed:
 
 ```bash
-audagent validate auditagent.policy.yaml
-audagent check auditagent.policy.yaml --action-type external --action-name send_email
+tracyn validate tracyn.policy.yaml
+tracyn check tracyn.policy.yaml --action-type external --action-name send_email
 ```
 
 ## What this does *not* do
 
 Policy enforcement is trust-based: `track()` checks the policy and calls the
 approval endpoint itself, but nothing stops a developer from not wrapping a
-call, or from bypassing the SDK entirely in their own code. AuditAgent's
+call, or from bypassing the SDK entirely in their own code. Tracyn's
 threat model is "give honest teams a governance trail and a real approval
 gate," not "prevent a malicious developer from evading their own compliance
-tooling." Treat AuditAgent as you would any other internal logging library.
+tooling." Treat Tracyn as you would any other internal logging library.

@@ -1,6 +1,6 @@
 import pytest
 
-from audagent.cli import PolicyValidationError, main, validate_policy_yaml
+from tracyn.cli import PolicyValidationError, main, validate_policy_yaml
 
 VALID_YAML = """
 rules:

@@ -1,12 +1,12 @@
-"""``audagent`` command-line tool.
+"""``tracyn`` command-line tool.
 
-Lets a developer validate their `auditagent.policy.yaml` (the same file
-passed to `AuditAgent(policy_yaml=...)` — see README's "Policy" section)
+Lets a developer validate their `tracyn.policy.yaml` (the same file
+passed to `Tracyn(policy_yaml=...)` — see README's "Policy" section)
 before ever deploying it, and check what a given action would resolve to
 under it. Both commands run entirely offline: no API key, no network call.
 
-    $ audagent validate auditagent.policy.yaml
-    $ audagent check auditagent.policy.yaml --action-type external --action-name send_email
+    $ tracyn validate tracyn.policy.yaml
+    $ tracyn check tracyn.policy.yaml --action-type external --action-name send_email
 """
 
 from __future__ import annotations
@@ -18,7 +18,7 @@ from typing import Any
 
 import yaml
 
-from audagent.policy import Policy
+from tracyn.policy import Policy
 
 _ALLOWED_MATCH_FIELDS = {"action_type", "action_name"}
 
@@ -136,7 +136,7 @@ def _first_matching_rule(rules: list[dict], action_type: str, action_name: str) 
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(prog="audagent", description="Offline tools for an auditagent.policy.yaml file.")
+    parser = argparse.ArgumentParser(prog="tracyn", description="Offline tools for an tracyn.policy.yaml file.")
     sub = parser.add_subparsers(dest="command", required=True)
 
     p_validate = sub.add_parser("validate", help="Check a policy YAML file for syntax/schema errors.")

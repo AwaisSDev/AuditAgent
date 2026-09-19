@@ -1,10 +1,10 @@
 import asyncio
 import os
 
-from audagent import ApprovalDeniedError, ApprovalTimeoutError, AuditAgent
+from tracyn import ApprovalDeniedError, ApprovalTimeoutError, Tracyn
 
-audit = AuditAgent(
-    api_key=os.environ["AUDITAGENT_API_KEY"],
+audit = Tracyn(
+    api_key=os.environ["TRACYN_API_KEY"],
     agent_name="support-bot",
 )
 

@@ -1,4 +1,4 @@
-from audagent.policy import Policy
+from tracyn.policy import Policy
 
 
 def test_no_rules_means_no_approval_needed():

@@ -12,13 +12,13 @@ from typing import Any, Callable, TypeVar
 
 import httpx
 
-from audagent.exceptions import ApprovalDeniedError, ApprovalTimeoutError
-from audagent.hashing import hash_prompt
-from audagent.policy import Policy
+from tracyn.exceptions import ApprovalDeniedError, ApprovalTimeoutError
+from tracyn.hashing import hash_prompt
+from tracyn.policy import Policy
 
 F = TypeVar("F", bound=Callable[..., Any])
 
-DEFAULT_BASE_URL = "https://mcp.auditagent.cloud"
+DEFAULT_BASE_URL = "https://mcp.tracyn.online"
 POLL_INTERVAL_SECONDS = 2.0
 # An approval poll can run for up to the server's approval window (30 min by
 # default) — a single transient network blip during that whole span
@@ -44,11 +44,11 @@ def _is_transient_poll_error(exc: Exception) -> bool:
     return isinstance(exc, httpx.TransportError)
 
 
-class AuditAgent:
+class Tracyn:
     """
-        from audagent import AuditAgent
+        from tracyn import Tracyn
 
-        audit = AuditAgent(api_key="al_live_...", agent_name="support-bot")
+        audit = Tracyn(api_key="al_live_...", agent_name="support-bot")
 
         @audit.track(action_type="external", action_name="send_email")
         async def send_email(to, subject, body):
@@ -133,7 +133,7 @@ class AuditAgent:
             if attempt < attempts - 1:
                 time.sleep(0.5 * (attempt + 1))
         print(
-            f"[audagent] WARNING: failed to log event {event.get('action_name')!r} "
+            f"[tracyn] WARNING: failed to log event {event.get('action_name')!r} "
             f"after {attempts} attempts: {last_error}",
             file=sys.stderr,
         )
@@ -244,7 +244,7 @@ class AuditAgent:
     ):
         """Wraps a tool call: enforces approval per policy (F2/F3), then logs
         the call — inputs, output, model, prompt hash, cost, latency (F1) —
-        to AuditAgent. Works on both sync and async functions."""
+        to Tracyn. Works on both sync and async functions."""
 
         def decorator(func: F) -> F:
             name = action_name or func.__name__

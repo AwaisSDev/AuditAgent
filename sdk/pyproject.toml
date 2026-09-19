@@ -5,17 +5,17 @@ build-backend = "hatchling.build"
 [project]
 # PyPI rejected "auditagent" as too similar to an already-registered,
 # unrelated project ("audit-agent"). Renamed the package/module/CLI to
-# "audagent" everywhere (not just the PyPI listing name) for one
+# "tracyn" everywhere (not just the PyPI listing name) for one
 # consistent name instead of a confusing split between what you `pip
 # install` and what you `import`.
-name = "AudAgent"
-version = "0.2.4"
+name = "tracyn"
+version = "0.3.0"
 description = "Drop-in logging, human approvals, and compliance evidence for AI agents."
 readme = "README.md"
 requires-python = ">=3.9"
 license = "MIT"
 license-files = ["LICENSE"]
-authors = [{ name = "AuditAgent" }]
+authors = [{ name = "Tracyn" }]
 dependencies = [
     "httpx>=0.27",
     "pyyaml>=6.0",
@@ -36,14 +36,14 @@ classifiers = [
 dev = ["pytest>=8.0", "mypy>=1.10", "types-PyYAML"]
 
 [project.urls]
-Homepage = "https://auditagent.cloud"
-Documentation = "https://auditagent.cloud/docs"
+Homepage = "https://tracyn.online"
+Documentation = "https://tracyn.online/docs"
 
 [project.scripts]
-audagent = "audagent.cli:main"
+tracyn = "tracyn.cli:main"
 
 [tool.hatch.build.targets.wheel]
-packages = ["audagent"]
+packages = ["tracyn"]
 
 [tool.mypy]
 # The installed mypy version no longer emulates 3.9 itself; the package

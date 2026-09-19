@@ -10,11 +10,11 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import httpx
 import pytest
 
-from audagent.client import MAX_CONSECUTIVE_POLL_ERRORS, AuditAgent
+from tracyn.client import MAX_CONSECUTIVE_POLL_ERRORS, Tracyn
 
 
 def _make_agent():
-    return AuditAgent(api_key="test", agent_name="test-agent", policy_yaml="rules: []")
+    return Tracyn(api_key="test", agent_name="test-agent", policy_yaml="rules: []")
 
 
 def _response(json_body, status_code=200):
@@ -36,7 +36,7 @@ def test_sync_polling_survives_transient_network_errors():
         _response({"status": "approved", "id": "appr-1"}),
     ]
 
-    with patch("audagent.client.httpx.Client", return_value=fake_client), patch("time.sleep"):
+    with patch("tracyn.client.httpx.Client", return_value=fake_client), patch("time.sleep"):
         result = agent._request_approval_sync("external", "send_email", {})
 
     assert result["status"] == "approved"
@@ -49,7 +49,7 @@ def test_sync_polling_gives_up_after_too_many_consecutive_errors():
     fake_client.post.return_value = _response({"approval_id": "appr-1"})
     fake_client.get.side_effect = httpx.ConnectError("persistent outage")
 
-    with patch("audagent.client.httpx.Client", return_value=fake_client), patch("time.sleep"):
+    with patch("tracyn.client.httpx.Client", return_value=fake_client), patch("time.sleep"):
         with pytest.raises(httpx.ConnectError):
             agent._request_approval_sync("external", "send_email", {})
 
@@ -69,7 +69,7 @@ def test_sync_polling_survives_a_transient_5xx_from_the_backend():
         _response({"status": "approved", "id": "appr-1"}),
     ]
 
-    with patch("audagent.client.httpx.Client", return_value=fake_client), patch("time.sleep"):
+    with patch("tracyn.client.httpx.Client", return_value=fake_client), patch("time.sleep"):
         result = agent._request_approval_sync("external", "send_email", {})
 
     assert result["status"] == "approved"
@@ -85,7 +85,7 @@ def test_sync_polling_does_not_retry_a_4xx_from_the_backend():
     fake_client.post.return_value = _response({"approval_id": "appr-1"})
     fake_client.get.return_value = _response({}, status_code=404)
 
-    with patch("audagent.client.httpx.Client", return_value=fake_client), patch("time.sleep"):
+    with patch("tracyn.client.httpx.Client", return_value=fake_client), patch("time.sleep"):
         with pytest.raises(httpx.HTTPStatusError):
             agent._request_approval_sync("external", "send_email", {})
 
@@ -103,7 +103,7 @@ def test_async_polling_survives_a_transient_5xx_from_the_backend():
     fake_client.__aenter__.return_value = fake_client
     fake_client.__aexit__.return_value = False
 
-    with patch("audagent.client.httpx.AsyncClient", return_value=fake_client), patch("asyncio.sleep", new=AsyncMock()):
+    with patch("tracyn.client.httpx.AsyncClient", return_value=fake_client), patch("asyncio.sleep", new=AsyncMock()):
         result = asyncio.run(agent._request_approval_async("external", "send_email", {}))
 
     assert result["status"] == "rejected"
@@ -121,7 +121,7 @@ def test_async_polling_survives_transient_network_errors():
     fake_client.__aenter__.return_value = fake_client
     fake_client.__aexit__.return_value = False
 
-    with patch("audagent.client.httpx.AsyncClient", return_value=fake_client), patch("asyncio.sleep", new=AsyncMock()):
+    with patch("tracyn.client.httpx.AsyncClient", return_value=fake_client), patch("asyncio.sleep", new=AsyncMock()):
         result = asyncio.run(agent._request_approval_async("external", "send_email", {}))
 
     assert result["status"] == "rejected"

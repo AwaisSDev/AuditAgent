@@ -6,16 +6,16 @@ from unittest.mock import MagicMock, patch
 import httpx
 import pytest
 
-from audagent.client import AuditAgent
-from audagent.exceptions import ApprovalDeniedError, ApprovalTimeoutError
-from audagent.policy import DEFAULT_POLICY_YAML
+from tracyn.client import Tracyn
+from tracyn.exceptions import ApprovalDeniedError, ApprovalTimeoutError
+from tracyn.policy import DEFAULT_POLICY_YAML
 
 
 def _make_agent(monkeypatch):
-    """An AuditAgent with the background network thread neutered: events are
+    """An Tracyn with the background network thread neutered: events are
     captured in a list instead of being queued for a real HTTP POST, and no
     policy fetch hits the network (policy_yaml is passed explicitly)."""
-    agent = AuditAgent(api_key="test", agent_name="test-agent", policy_yaml="rules: []")
+    agent = Tracyn(api_key="test", agent_name="test-agent", policy_yaml="rules: []")
     events = []
     monkeypatch.setattr(agent, "_enqueue_event", lambda **fields: events.append(fields))
     return agent, events
@@ -82,7 +82,7 @@ def test_registers_atexit_hook_so_events_flush_on_normal_process_exit(monkeypatc
     registered = []
     monkeypatch.setattr(atexit, "register", lambda fn: registered.append(fn))
 
-    agent = AuditAgent(api_key="test", agent_name="test-agent", policy_yaml="rules: []")
+    agent = Tracyn(api_key="test", agent_name="test-agent", policy_yaml="rules: []")
 
     assert agent.close in registered
     agent.close()
@@ -101,8 +101,8 @@ def test_close_is_idempotent(monkeypatch):
 
 def test_fetch_policy_falls_back_to_default_on_a_network_error(monkeypatch):
     monkeypatch.setattr(atexit, "register", lambda fn: None)
-    with patch("audagent.client.httpx.get", side_effect=httpx.ConnectError("no network")):
-        agent = AuditAgent(api_key="test", agent_name="test-agent")
+    with patch("tracyn.client.httpx.get", side_effect=httpx.ConnectError("no network")):
+        agent = Tracyn(api_key="test", agent_name="test-agent")
 
     # DEFAULT_POLICY_YAML requires approval for any "external" action.
     assert agent.policy.requires_approval("external", "anything") is True
@@ -110,7 +110,7 @@ def test_fetch_policy_falls_back_to_default_on_a_network_error(monkeypatch):
 
 
 def test_track_runs_the_function_and_logs_when_approved(monkeypatch):
-    agent = AuditAgent(api_key="test", agent_name="test-agent", policy_yaml=DEFAULT_POLICY_YAML)
+    agent = Tracyn(api_key="test", agent_name="test-agent", policy_yaml=DEFAULT_POLICY_YAML)
     events = []
     monkeypatch.setattr(agent, "_enqueue_event", lambda **fields: events.append(fields))
     monkeypatch.setattr(agent, "_request_approval_sync", lambda *a, **kw: {"status": "approved", "id": "appr-1", "decision_by": "alice"})
@@ -128,7 +128,7 @@ def test_track_runs_the_function_and_logs_when_approved(monkeypatch):
 
 
 def test_track_raises_approval_denied_and_never_runs_the_function(monkeypatch):
-    agent = AuditAgent(api_key="test", agent_name="test-agent", policy_yaml=DEFAULT_POLICY_YAML)
+    agent = Tracyn(api_key="test", agent_name="test-agent", policy_yaml=DEFAULT_POLICY_YAML)
     monkeypatch.setattr(agent, "_enqueue_event", lambda **fields: None)
     monkeypatch.setattr(agent, "_request_approval_sync", lambda *a, **kw: {"status": "rejected", "id": "appr-1", "decision_by": "alice", "decision_note": "too risky"})
 
@@ -147,7 +147,7 @@ def test_track_raises_approval_denied_and_never_runs_the_function(monkeypatch):
 
 
 def test_track_raises_approval_timeout(monkeypatch):
-    agent = AuditAgent(api_key="test", agent_name="test-agent", policy_yaml=DEFAULT_POLICY_YAML)
+    agent = Tracyn(api_key="test", agent_name="test-agent", policy_yaml=DEFAULT_POLICY_YAML)
     monkeypatch.setattr(agent, "_enqueue_event", lambda **fields: None)
     monkeypatch.setattr(agent, "_request_approval_sync", lambda *a, **kw: {"status": "denied_timeout", "id": "appr-1"})
 
@@ -161,7 +161,7 @@ def test_track_raises_approval_timeout(monkeypatch):
 
 
 def test_track_async_runs_and_raises_denied_the_same_way(monkeypatch):
-    agent = AuditAgent(api_key="test", agent_name="test-agent", policy_yaml=DEFAULT_POLICY_YAML)
+    agent = Tracyn(api_key="test", agent_name="test-agent", policy_yaml=DEFAULT_POLICY_YAML)
     monkeypatch.setattr(agent, "_enqueue_event", lambda **fields: None)
 
     async def _approval(*a, **kw):
@@ -203,7 +203,7 @@ def test_cost_fn_exception_falls_back_to_none(monkeypatch):
 
 
 def test_send_with_retry_succeeds_on_first_attempt():
-    agent = AuditAgent(api_key="test", agent_name="test-agent", policy_yaml="rules: []")
+    agent = Tracyn(api_key="test", agent_name="test-agent", policy_yaml="rules: []")
     fake_client = MagicMock()
     fake_client.post.return_value = MagicMock(status_code=202)
 
@@ -214,7 +214,7 @@ def test_send_with_retry_succeeds_on_first_attempt():
 
 
 def test_send_with_retry_retries_then_succeeds():
-    agent = AuditAgent(api_key="test", agent_name="test-agent", policy_yaml="rules: []")
+    agent = Tracyn(api_key="test", agent_name="test-agent", policy_yaml="rules: []")
     fake_client = MagicMock()
     fake_client.post.side_effect = [httpx.ConnectError("boom"), MagicMock(status_code=202)]
 
@@ -226,7 +226,7 @@ def test_send_with_retry_retries_then_succeeds():
 
 
 def test_send_with_retry_warns_to_stderr_after_exhausting_attempts(capsys):
-    agent = AuditAgent(api_key="test", agent_name="test-agent", policy_yaml="rules: []")
+    agent = Tracyn(api_key="test", agent_name="test-agent", policy_yaml="rules: []")
     fake_client = MagicMock()
     fake_client.post.side_effect = httpx.ConnectError("persistent outage")
 
