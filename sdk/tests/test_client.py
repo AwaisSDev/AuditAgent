@@ -12,7 +12,7 @@ from tracyn.policy import DEFAULT_POLICY_YAML
 
 
 def _make_agent(monkeypatch):
-    """An Tracyn with the background network thread neutered: events are
+    """A Tracyn with the background network thread neutered: events are
     captured in a list instead of being queued for a real HTTP POST, and no
     policy fetch hits the network (policy_yaml is passed explicitly)."""
     agent = Tracyn(api_key="test", agent_name="test-agent", policy_yaml="rules: []")

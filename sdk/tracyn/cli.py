@@ -136,7 +136,7 @@ def _first_matching_rule(rules: list[dict], action_type: str, action_name: str) 
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(prog="tracyn", description="Offline tools for an tracyn.policy.yaml file.")
+    parser = argparse.ArgumentParser(prog="tracyn", description="Offline tools for a tracyn.policy.yaml file.")
     sub = parser.add_subparsers(dest="command", required=True)
 
     p_validate = sub.add_parser("validate", help="Check a policy YAML file for syntax/schema errors.")
