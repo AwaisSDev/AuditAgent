@@ -76,30 +76,30 @@ export default function QuestionnairesPage() {
             ))}
           </div>
         ) : (
-          <Table>
+          <Table className="text-[17px]">
             <THead>
               <TR>
-                <TH>File</TH>
-                <TH>Status</TH>
-                <TH>Uploaded</TH>
-                <TH />
+                <TH className="h-12 text-base">File</TH>
+                <TH className="h-12 text-base">Status</TH>
+                <TH className="h-12 text-base">Uploaded</TH>
+                <TH className="h-12" />
               </TR>
             </THead>
             <TBody>
               {questionnaires.map((q) => (
                 <TR key={q.id}>
-                  <TD>{q.filename}</TD>
-                  <TD>
+                  <TD className="py-5">{q.filename}</TD>
+                  <TD className="py-5">
                     <StatusBadge status={q.status === "ready" ? "completed" : q.status === "error" ? "error" : "pending"} />
                   </TD>
-                  <TD className="text-xs text-muted-foreground">{formatDate(q.created_at)}</TD>
-                  <TD>
+                  <TD className="py-5 text-sm text-muted-foreground">{formatDate(q.created_at)}</TD>
+                  <TD className="py-5">
                     {q.status === "ready" && (
-                      <Link href={`/questionnaires/${q.id}`} className="text-sm font-medium text-primary underline">
+                      <Link href={`/questionnaires/${q.id}`} className="text-base font-medium text-primary underline">
                         Review answers
                       </Link>
                     )}
-                    {q.status === "error" && <span className="text-xs text-error">{q.error_message}</span>}
+                    {q.status === "error" && <span className="text-sm text-error">{q.error_message}</span>}
                   </TD>
                 </TR>
               ))}

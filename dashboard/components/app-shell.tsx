@@ -40,11 +40,13 @@ function AppShellSkeleton() {
 export function AppShell({ children }: { children: React.ReactNode }) {
   const { workspaces, isLoading } = useWorkspace();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
-  // The Timeline's event table is the densest view in the app -- give it
-  // extra breathing room instead of squeezing it into the same width as a
-  // settings form.
+  // Timeline and Evidence Packs are both just a table in a card -- give
+  // them extra breathing room instead of squeezing them into the same
+  // width as a settings form. Settings has its own narrower max-w-2xl
+  // (see its page.tsx) since it's a stack of small form cards, not a
+  // table-first page, even though one of those cards contains a table.
   const pathname = usePathname();
-  const isTimeline = pathname === "/dashboard";
+  const isWideTablePage = pathname === "/dashboard" || pathname === "/questionnaires";
 
   // Client-side navigation (next/link) never re-runs the theme-init
   // script, so arriving here from a forced-always-light page (landing,
@@ -79,7 +81,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </div>
 
         <main className="flex-1 overflow-y-auto md:h-screen">
-          <div className={`mx-auto px-4 py-6 sm:px-10 sm:py-8 ${isTimeline ? "max-w-[1400px]" : "max-w-4xl"}`}>
+          <div className={`mx-auto px-4 py-6 sm:px-10 sm:py-8 ${isWideTablePage ? "max-w-[1400px]" : "max-w-4xl"}`}>
             {children}
           </div>
         </main>
