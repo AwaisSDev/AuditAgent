@@ -86,7 +86,7 @@ export default function PolicyPage() {
   }
 
   return (
-    <div className="max-w-2xl space-y-6">
+    <div className="space-y-6">
       <div className="space-y-1">
         <h1 className="text-2xl font-semibold tracking-tight">Policy</h1>
         <p className="text-sm text-muted-foreground">
@@ -161,17 +161,17 @@ export default function PolicyPage() {
           {RULE_DEFS.map((def) => {
             const Icon = ICONS[def.key];
             return (
-              <div key={def.key} className="flex items-center gap-3 p-4">
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-muted">
-                  <Icon className="h-4 w-4 text-muted-foreground" strokeWidth={1.75} />
+              <div key={def.key} className="flex items-center gap-4 p-5">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-muted">
+                  <Icon className="h-[18px] w-[18px] text-muted-foreground" strokeWidth={1.75} />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="text-[15px] font-semibold text-foreground">{def.label}</p>
-                  <p className="text-sm text-muted-foreground">{def.description}</p>
+                  <p className="text-base font-semibold text-foreground">{def.label}</p>
+                  <p className="text-[15px] text-muted-foreground">{def.description}</p>
                 </div>
                 <span
                   className={cn(
-                    "hidden text-sm sm:block",
+                    "hidden text-[15px] sm:block",
                     toggles[def.key] ? "font-semibold text-foreground" : "font-medium text-muted-foreground"
                   )}
                 >

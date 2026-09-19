@@ -101,22 +101,22 @@ export default function ApprovalsPage() {
       <div className="space-y-3">
         {approvals.map((a) => (
           <Card key={a.id}>
-            <CardContent className="flex flex-col gap-3 pt-4 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
-              <div className="min-w-0 space-y-1">
-                <div className="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-[15px]">
+            <CardContent className="flex flex-col gap-4 pt-5 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
+              <div className="min-w-0 flex-1 space-y-1.5">
+                <div className="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-base">
                   <span className="font-medium">{a.requested_action.agent_name}</span>
                   <span className="text-muted-foreground">wants to run</span>
                   <span className="font-medium">{a.requested_action.action_name}</span>
                   <StatusBadge status={a.status} />
                 </div>
-                <div className="text-xs text-muted-foreground">
+                <div className="text-sm text-muted-foreground">
                   {a.requested_action.action_type} · requested {formatDate(a.requested_at)}
                   {a.decided_at && ` · decided ${formatDate(a.decided_at)} by ${a.decision_by}`}
                 </div>
-                <pre className="mt-1 max-w-xl overflow-auto whitespace-pre-wrap break-all rounded-md bg-muted p-2 text-xs">
+                <pre className="mt-1 max-w-3xl overflow-auto whitespace-pre-wrap break-all rounded-md bg-muted p-3 text-sm">
                   {JSON.stringify(a.requested_action.inputs_preview, null, 2)}
                 </pre>
-                {a.decision_note && <p className="text-xs italic text-muted-foreground">"{a.decision_note}"</p>}
+                {a.decision_note && <p className="text-sm italic text-muted-foreground">"{a.decision_note}"</p>}
               </div>
 
               {a.status === "pending" && (() => {

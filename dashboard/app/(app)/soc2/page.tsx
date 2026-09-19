@@ -19,7 +19,7 @@ export default function Soc2Page() {
       <div className="flex flex-col items-start gap-4 sm:flex-row sm:justify-between">
         <div className="min-w-0 space-y-1">
           <h1 className="text-2xl font-semibold tracking-tight">SOC 2 control mapping</h1>
-          <p className="max-w-xl text-sm text-muted-foreground">
+          <p className="max-w-2xl text-[15px] text-muted-foreground">
             Which of your Tracyn evidence already speaks to common SOC 2 controls. Not audit certification, just
             a head start for your auditor conversation.
           </p>
@@ -42,19 +42,19 @@ export default function Soc2Page() {
       ) : (
         <div className="divide-y divide-border rounded-lg border border-border">
           {controls.map((c) => (
-            <div key={c.control_id} className="flex flex-col gap-3 p-4 sm:flex-row sm:gap-6">
-              <div className="flex shrink-0 items-start gap-3 sm:w-64">
+            <div key={c.control_id} className="flex flex-col gap-4 p-5 sm:flex-row sm:gap-8">
+              <div className="flex shrink-0 items-start gap-3 sm:w-72">
                 <span className="mt-0.5 rounded bg-muted px-1.5 py-0.5 font-mono text-xs font-medium text-muted-foreground">
                   {c.control_id}
                 </span>
                 <div>
-                  <p className="text-sm font-medium leading-snug">{c.title}</p>
-                  <p className="mt-0.5 text-[13px] leading-relaxed text-muted-foreground">{c.description}</p>
+                  <p className="text-base font-medium leading-snug">{c.title}</p>
+                  <p className="mt-0.5 text-sm leading-relaxed text-muted-foreground">{c.description}</p>
                 </div>
               </div>
-              <div className="rounded-md bg-muted/60 px-3 py-2 sm:flex-1">
-                <p className="text-[13px] font-medium text-foreground">{c.evidence_type}</p>
-                <p className="mt-0.5 text-[13px] leading-relaxed text-muted-foreground">{c.evidence_note}</p>
+              <div className="rounded-md bg-muted/60 px-4 py-3 sm:flex-1">
+                <p className="text-sm font-medium text-foreground">{c.evidence_type}</p>
+                <p className="mt-0.5 text-sm leading-relaxed text-muted-foreground">{c.evidence_note}</p>
               </div>
             </div>
           ))}
