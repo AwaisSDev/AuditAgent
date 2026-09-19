@@ -51,7 +51,8 @@ export default function LoginPage() {
       <div className="w-full max-w-[360px]">
         <div className="mb-6 flex flex-col items-center text-center">
           {/* eslint-disable-next-line @next/next/no-img-element -- next/image's optimizer (sharp) fails on this PNG */}
-          <img src="/logo.png" alt="" width={36} height={36} className="mb-3 rounded-md" />
+          <img src="/logo.png" alt="" width={36} height={36} className="mb-3 rounded-md dark:hidden" />
+          <img src="/logo-white.png" alt="" width={36} height={36} className="mb-3 hidden rounded-md dark:block" />
           <h1 className="text-lg font-semibold tracking-tight">
             {mode === "signin" ? "Log in to Tracyn" : "Create your Tracyn account"}
           </h1>

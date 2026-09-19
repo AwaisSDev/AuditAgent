@@ -19,7 +19,8 @@ export function LegalPage({
         <div className="mx-auto flex h-16 max-w-[760px] items-center justify-between px-6">
           <Link href="/" className="flex items-center gap-2.5">
             {/* eslint-disable-next-line @next/next/no-img-element -- next/image's optimizer (sharp) fails on this PNG */}
-            <img src="/logo.png" alt="" width={22} height={22} />
+            <img src="/logo.png" alt="" width={22} height={22} className="dark:hidden" />
+            <img src="/logo-white.png" alt="" width={22} height={22} className="hidden dark:block" />
             <span className="text-[15px] font-semibold tracking-[-0.01em]">Tracyn</span>
           </Link>
           <nav className="flex items-center gap-5 text-[13px] text-muted-foreground">

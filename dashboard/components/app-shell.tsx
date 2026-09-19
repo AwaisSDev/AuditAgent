@@ -72,7 +72,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </button>
           <Link href="/" className="flex items-center gap-2">
             {/* eslint-disable-next-line @next/next/no-img-element -- next/image's optimizer (sharp) fails on this PNG */}
-            <img src="/logo.png" alt="" width={20} height={20} />
+            <img src="/logo.png" alt="" width={20} height={20} className="dark:hidden" />
+            <img src="/logo-white.png" alt="" width={20} height={20} className="hidden dark:block" />
             <span className="text-sm font-semibold">Tracyn</span>
           </Link>
         </div>
