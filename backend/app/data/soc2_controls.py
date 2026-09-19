@@ -1,7 +1,7 @@
 """F7 — static SOC2 Trust Services Criteria (Common Criteria) mapping.
 
 Not legal or audit advice: this shows a workspace's auditor which of their
-AuditAgent-logged evidence *speaks to* each control, as a starting point for
+Tracyn-logged evidence *speaks to* each control, as a starting point for
 their own SOC2 readiness work — it doesn't certify compliance by itself.
 """
 

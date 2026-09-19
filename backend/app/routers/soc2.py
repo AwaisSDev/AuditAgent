@@ -28,5 +28,5 @@ async def export_soc2_csv(workspace_id: str, user: CurrentUser = Depends(require
     return StreamingResponse(
         iter([buf.getvalue()]),
         media_type="text/csv",
-        headers={"Content-Disposition": "attachment; filename=auditagent-soc2-mapping.csv"},
+        headers={"Content-Disposition": "attachment; filename=tracyn-soc2-mapping.csv"},
     )

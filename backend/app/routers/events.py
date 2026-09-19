@@ -82,7 +82,7 @@ async def export_events_csv(
     return StreamingResponse(
         iter([content]),
         media_type="text/csv",
-        headers={"Content-Disposition": "attachment; filename=auditagent-events.csv"},
+        headers={"Content-Disposition": "attachment; filename=tracyn-events.csv"},
     )
 
 

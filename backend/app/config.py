@@ -35,10 +35,10 @@ class Settings(BaseSettings):
     slack_signing_secret: str = ""
 
     # Email fallback (Resend) -- Resend requires a verified sending domain.
-    # auditagent.cloud is owned now, but this default won't actually send
+    # tracyn.online is owned now, but this default won't actually send
     # until that domain is verified in Resend and EMAIL_FROM is updated.
     resend_api_key: str = ""
-    email_from: str = "alerts@auditagent.cloud"
+    email_from: str = "alerts@tracyn.online"
 
     # Whop -- the billing provider. whop_api_base_url points at the
     # sandbox by default (https://sandbox-api.whop.com/api/v1); switch it to
@@ -57,11 +57,11 @@ class Settings(BaseSettings):
     sentry_dsn: str = ""
     sentry_environment: str = "production"
 
-    # App -- backend stays on the HF Space URL; auditagent.cloud is the
+    # App -- backend stays on the HF Space URL; tracyn.online is the
     # dashboard's custom domain (attached in Vercel, DNS verified).
     app_base_url: str = "https://awais1290-auditagent.hf.space"
-    dashboard_base_url: str = "https://auditagent.cloud"
-    cors_origins: str = "http://localhost:3000,https://auditagent.cloud,https://www.auditagent.cloud,https://getauditagent.vercel.app"
+    dashboard_base_url: str = "https://tracyn.online"
+    cors_origins: str = "http://localhost:3000,https://tracyn.online,https://www.tracyn.online,https://tracyn.vercel.app"
     approval_timeout_minutes: int = 30
 
     @property

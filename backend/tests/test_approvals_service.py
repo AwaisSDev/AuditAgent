@@ -206,7 +206,7 @@ async def test_apply_decision_skips_slack_update_when_no_message_was_posted(monk
 # workspace via require_workspace_member(workspace_id) -- not that
 # approval_id itself belongs to that workspace -- and the Slack webhook
 # (routers/slack.py), authenticated instead by Slack's own signature check
-# on a button AuditAgent posted itself. A missing workspace_id filter here
+# on a button Tracyn posted itself. A missing workspace_id filter here
 # would let any member of any workspace decide another tenant's approval by
 # id, so the dashboard path must pass workspace_id through and have it
 # enforced at the database-query level, not just the initial select.

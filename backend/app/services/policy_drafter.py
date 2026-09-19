@@ -20,8 +20,8 @@ from pydantic import BaseModel
 from app.config import get_settings
 from app.services.policy_engine import PolicyParseError, parse_policy
 
-_SYSTEM_PROMPT = """You edit AuditAgent policy YAML from a plain-English instruction. \
-AuditAgent lets an AI agent's actions run automatically or blocks on a human approval, \
+_SYSTEM_PROMPT = """You edit Tracyn policy YAML from a plain-English instruction. \
+Tracyn lets an AI agent's actions run automatically or blocks on a human approval, \
 decided by this policy.
 
 The exact schema (nothing else is valid):

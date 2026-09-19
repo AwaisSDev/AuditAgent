@@ -85,10 +85,10 @@ def _gpu_probe() -> str:
 if spaces is not None:
     _gpu_probe = spaces.GPU(duration=1)(_gpu_probe)
 
-with gr.Blocks(title="AuditAgent API") as status:
+with gr.Blocks(title="Tracyn API") as status:
     gr.Markdown(
-        "# AuditAgent API\n"
-        "This Space hosts the AuditAgent backend (API + worker).\n\n"
+        "# Tracyn API\n"
+        "This Space hosts the Tracyn backend (API + worker).\n\n"
         "Health: [/healthz](healthz) · OpenAPI: [/docs](docs)"
     )
     _probe_btn = gr.Button("GPU probe", size="sm", visible=False)

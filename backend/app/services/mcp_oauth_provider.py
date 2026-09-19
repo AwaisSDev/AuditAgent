@@ -3,8 +3,8 @@ one-click "Connect" flow (see auditagent_mcp.server.configure_oauth,
 routers/oauth.py, and the dashboard's app/(app)/oauth/authorize page).
 
 Deliberately minimal: this isn't a general-purpose OAuth provider, just a
-thin login/consent wrapper around AuditAgent's own accounts. The "access
-token" handed out at the end of the flow IS a real AuditAgent API key,
+thin login/consent wrapper around Tracyn's own accounts. The "access
+token" handed out at the end of the flow IS a real Tracyn API key,
 verified by the exact same check (security.verify_api_key) as every other
 API-key-authed route -- so a user who instead pastes an existing key
 directly (Claude Code's --header method, skipping this flow entirely)
@@ -47,7 +47,7 @@ _REQUEST_TTL_SECONDS = 15 * 60  # time to actually complete login + consent in t
 _CODE_TTL_SECONDS = 5 * 60  # time to exchange the code for a token -- standard short-lived practice
 
 
-class _AuditAgentAuthCode(AuthorizationCode):
+class _TracynAuthCode(AuthorizationCode):
     """Adds the actual, already-minted API key this code will hand out on
     exchange. Not part of the base protocol's model; subclassing to add a
     field the framework itself never renders is explicitly supported (see
@@ -66,12 +66,12 @@ class PendingAuthorization:
     created_at: float = field(default_factory=time.monotonic)
 
 
-class AuditAgentOAuthProvider(OAuthAuthorizationServerProvider):
+class TracynOAuthProvider(OAuthAuthorizationServerProvider):
     def __init__(self, *, dashboard_base_url: str) -> None:
         self._dashboard_base_url = dashboard_base_url.rstrip("/")
         self._clients: dict[str, OAuthClientInformationFull] = {}
         self._pending: dict[str, PendingAuthorization] = {}
-        self._codes: dict[str, _AuditAgentAuthCode] = {}
+        self._codes: dict[str, _TracynAuthCode] = {}
 
     # -- client registration (RFC 7591) --------------------------------------
 
@@ -105,7 +105,7 @@ class AuditAgentOAuthProvider(OAuthAuthorizationServerProvider):
             return None
 
         code = secrets.token_urlsafe(32)  # ~256 bits, comfortably over RFC 6749's 128-bit floor
-        self._codes[code] = _AuditAgentAuthCode(
+        self._codes[code] = _TracynAuthCode(
             code=code,
             scopes=pending.params.scopes or ["mcp"],
             expires_at=time.time() + _CODE_TTL_SECONDS,
@@ -135,7 +135,7 @@ class AuditAgentOAuthProvider(OAuthAuthorizationServerProvider):
 
     async def load_authorization_code(
         self, client: OAuthClientInformationFull, authorization_code: str
-    ) -> _AuditAgentAuthCode | None:
+    ) -> _TracynAuthCode | None:
         code = self._codes.get(authorization_code)
         if code is None or code.client_id != client.client_id:
             return None
@@ -145,7 +145,7 @@ class AuditAgentOAuthProvider(OAuthAuthorizationServerProvider):
         return code
 
     async def exchange_authorization_code(
-        self, client: OAuthClientInformationFull, authorization_code: _AuditAgentAuthCode
+        self, client: OAuthClientInformationFull, authorization_code: _TracynAuthCode
     ) -> OAuthToken:
         del self._codes[authorization_code.code]  # single use
         return OAuthToken(
@@ -154,7 +154,7 @@ class AuditAgentOAuthProvider(OAuthAuthorizationServerProvider):
             scope=" ".join(authorization_code.scopes),
         )
 
-    # -- refresh tokens: not supported. AuditAgent API keys don't expire, so
+    # -- refresh tokens: not supported. Tracyn API keys don't expire, so
     # there's nothing to refresh -- a client that never receives a
     # refresh_token simply keeps using the same access token indefinitely,
     # which is the correct behavior here, not a missing feature.
@@ -167,7 +167,7 @@ class AuditAgentOAuthProvider(OAuthAuthorizationServerProvider):
     ) -> OAuthToken:
         raise TokenError(
             error="unsupported_grant_type",
-            error_description="AuditAgent API keys do not expire; there is no refresh token to exchange.",
+            error_description="Tracyn API keys do not expire; there is no refresh token to exchange.",
         )
 
     # -- resource-server side: verifying a bearer token -----------------------
@@ -176,7 +176,7 @@ class AuditAgentOAuthProvider(OAuthAuthorizationServerProvider):
         auth = await verify_api_key(token)
         if auth is None:
             return None
-        return AccessToken(token=token, client_id="auditagent-api-key", scopes=["mcp"], subject=auth.workspace_id)
+        return AccessToken(token=token, client_id="tracyn-api-key", scopes=["mcp"], subject=auth.workspace_id)
 
     async def revoke_token(self, token: AccessToken | RefreshToken) -> None:
         # Deliberately a no-op: `token` here is a real, already-persisted
@@ -212,5 +212,5 @@ async def mint_api_key_for_workspace(workspace_id: str, *, name: str, created_by
 
 
 @lru_cache
-def get_oauth_provider() -> AuditAgentOAuthProvider:
-    return AuditAgentOAuthProvider(dashboard_base_url=get_settings().dashboard_base_url)
+def get_oauth_provider() -> TracynOAuthProvider:
+    return TracynOAuthProvider(dashboard_base_url=get_settings().dashboard_base_url)

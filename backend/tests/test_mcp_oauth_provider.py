@@ -1,8 +1,8 @@
-"""Unit tests for AuditAgentOAuthProvider: the OAuth Authorization Server
+"""Unit tests for TracynOAuthProvider: the OAuth Authorization Server
 implementation that gives MCP clients (Claude.ai, ChatGPT, Grok, and
 Claude Code's connector button, which has no other way to authenticate a
 non-OAuth server) a one-click "Connect" flow, without this being a
-general-purpose auth system -- the token it issues IS a real AuditAgent
+general-purpose auth system -- the token it issues IS a real Tracyn
 API key, verified the same way as any other. Covers the whole cycle:
 dynamic client registration, /authorize handing off to the dashboard,
 the dashboard's consent decision completing or denying it, code exchange,
@@ -15,7 +15,7 @@ import pytest
 from mcp.server.auth.provider import AuthorizationParams
 from mcp.shared.auth import OAuthClientInformationFull
 
-from app.services.mcp_oauth_provider import AuditAgentOAuthProvider
+from app.services.mcp_oauth_provider import TracynOAuthProvider
 
 
 def _client(client_id="client-1", redirect_uri="https://claude.ai/api/mcp/callback") -> OAuthClientInformationFull:
@@ -33,8 +33,8 @@ def _params(code_challenge="challenge123", state="state123", redirect_uri="https
 
 
 @pytest.fixture
-def provider() -> AuditAgentOAuthProvider:
-    return AuditAgentOAuthProvider(dashboard_base_url="https://app.example.com/")
+def provider() -> TracynOAuthProvider:
+    return TracynOAuthProvider(dashboard_base_url="https://app.example.com/")
 
 
 # -- client registration -------------------------------------------------------

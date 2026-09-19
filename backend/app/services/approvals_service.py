@@ -28,7 +28,7 @@ async def apply_decision(
     member of any workspace who obtained another tenant's approval_id could
     approve/reject it). The Slack webhook path omits it: Slack's own
     signature verification is what authenticates that call, and the
-    approval_id there comes only from a button AuditAgent itself posted."""
+    approval_id there comes only from a button Tracyn itself posted."""
     db = get_db()
     q = db.table("approvals").select("*").eq("id", approval_id)
     if workspace_id is not None:

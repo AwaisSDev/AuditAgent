@@ -21,7 +21,7 @@ def send_approval_email(to_email: str, approval_id: str, agent_name: str, action
             "subject": f"Approval needed: {agent_name} wants to run {action_name}",
             "html": (
                 f"<p><b>{agent_name}</b> wants to run <b>{action_name}</b> and needs your approval.</p>"
-                f"<p><a href='{dashboard_url}/approvals/{approval_id}'>Review in AuditAgent →</a></p>"
+                f"<p><a href='{dashboard_url}/approvals/{approval_id}'>Review in Tracyn →</a></p>"
                 f"<p>This request auto-denies in 30 minutes if nobody responds.</p>"
             ),
         }

@@ -1,5 +1,5 @@
 ---
-title: AuditAgent API
+title: Tracyn API
 emoji: 🪶
 colorFrom: yellow
 colorTo: gray
@@ -10,7 +10,7 @@ app_file: space_app.py
 pinned: false
 ---
 
-# AuditAgent backend
+# Tracyn backend
 
 FastAPI API plus an arq worker. This directory is deployable two ways:
 
@@ -31,9 +31,9 @@ Required:
 | --- | --- |
 | `SUPABASE_URL` | Supabase → Project Settings → API |
 | `SUPABASE_SERVICE_ROLE_KEY` | same page, the `service_role` key (secret: never put it in the front end) |
-| `CORS_ORIGINS` | the site origin(s) the dashboard is served from, comma separated, e.g. `https://auditagent.cloud,https://www.auditagent.cloud` |
-| `DASHBOARD_BASE_URL` | e.g. `https://auditagent.cloud` (used in Slack/email links) |
-| `APP_BASE_URL` | this API's public URL, e.g. `https://<user>-auditagent-api.hf.space` |
+| `CORS_ORIGINS` | the site origin(s) the dashboard is served from, comma separated, e.g. `https://tracyn.online,https://www.tracyn.online` |
+| `DASHBOARD_BASE_URL` | e.g. `https://tracyn.online` (used in Slack/email links) |
+| `APP_BASE_URL` | this API's public URL, e.g. `https://<user>-tracyn-api.hf.space` |
 
 Optional, each feature degrades gracefully without it:
 

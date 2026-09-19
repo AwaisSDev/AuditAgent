@@ -12,13 +12,13 @@ from pydantic import BaseModel
 from app.config import get_settings
 
 _SYSTEM_PROMPT = """You are drafting answers to a customer security questionnaire on \
-behalf of a company that uses AuditAgent to log and govern its AI agents' actions. \
+behalf of a company that uses Tracyn to log and govern its AI agents' actions. \
 You will be given a question and a list of candidate log events (already PII-redacted) \
-from that company's own AuditAgent workspace.
+from that company's own Tracyn workspace.
 
 Rules:
 - Answer only using the provided events and general, defensible statements about how \
-AuditAgent's logging/approval/audit-chain features work. Never invent specifics not in \
+Tracyn's logging/approval/audit-chain features work. Never invent specifics not in \
 the evidence.
 - If the evidence doesn't support a confident answer, say so plainly and suggest what \
 the human reviewer should add.

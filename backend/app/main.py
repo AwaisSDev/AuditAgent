@@ -35,7 +35,7 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(
-    title="AuditAgent API",
+    title="Tracyn API",
     version="0.1.0",
     lifespan=lifespan,
     description="""
@@ -97,7 +97,7 @@ async def healthz() -> dict:
 # over MCP's Streamable HTTP transport instead of plain REST, so claude.ai,
 # ChatGPT, and Grok's custom-connector flows can reach it (none of them can
 # reach a stdio-only server — see docs/PRODUCTION_READINESS.md). A caller
-# can authenticate either way: paste an existing AuditAgent API key
+# can authenticate either way: paste an existing Tracyn API key
 # directly as the bearer token (still works, unchanged), or go through the
 # real OAuth flow below, which a plain static token can't offer -- some
 # clients' own "Connect" buttons (Claude Code's, notably) only know how to
